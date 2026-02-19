@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Building2, ChevronDown, ChevronRight, GitBranch, Star, TrendingUp, Users, X } from "lucide-react"
+import { ArrowLeft, Building2, GitBranch, Star, TrendingUp, Users, X } from "lucide-react"
 import {
   ActivityCalendarCard,
   ActivityChart,

@@ -5,10 +5,7 @@ import {
   ChevronRight,
   Crown,
   Handshake,
-  MessageCircle,
-  PhoneCall,
   Plus,
-  Rows3,
   Timer,
   Users,
   Wallet,
@@ -91,17 +88,6 @@ export function CityDetailView({
 
     return rows
   }, [city.partners, masters])
-
-  const chartMax = useMemo(
-    () => Math.max(...analytics.points.map((point) => point.leads), 1),
-    [analytics.points]
-  )
-  const communication = [
-    { label: 'Звонки', value: analytics.totals.calls, icon: PhoneCall },
-    { label: 'Чаты', value: analytics.totals.chats, icon: MessageCircle },
-    { label: 'Подборки', value: analytics.totals.selections, icon: Rows3 },
-  ]
-  const communicationMax = Math.max(...communication.map((item) => item.value), 1)
 
   const stats = [
     {
