@@ -349,3 +349,114 @@ export function getPartnerAnalytics(
     conversions: buildConversions(funnel),
   }
 }
+
+export interface NetworkTotals {
+  revenue: number
+  deals: number
+  leads: number
+  pipeline: number
+  activity: number
+  partnersAll: number
+  partnersOnline: number
+  crmHours: number
+  activeCities: number
+}
+
+export interface NetworkTrends {
+  revenue: number
+  deals: number
+  leads: number
+  pipeline: number
+  activity: number
+  crmHours: number
+}
+
+export interface NetworkAnalyticsData {
+  period: AnalyticsPeriod
+  periodLabel: string
+  current: NetworkTotals
+  previous: NetworkTotals
+  trendsPercent: NetworkTrends
+}
+
+// Helper: фейковая предыдущая агрегация для динамики (рост/падение)
+function simulatePreviousPeriod(current: NetworkTotals, seed: string): NetworkTotals {
+  const rng = createRng(hashString(`prev-${seed}`))
+
+  // Возвращаем значения, отличающиеся на -15% ... +5%
+  const wiggle = () => 0.85 + rng() * 0.20
+
+  return {
+    revenue: Math.round(current.revenue * wiggle()),
+    deals: Math.round(current.deals * wiggle()),
+    leads: Math.round(current.leads * wiggle()),
+    pipeline: Math.round(current.pipeline * wiggle()),
+    activity: Math.round(current.activity * wiggle()),
+    partnersAll: current.partnersAll, // Обычно статично
+    partnersOnline: current.partnersOnline,
+    crmHours: Math.round(current.crmHours * wiggle()),
+    activeCities: current.activeCities
+  }
+}
+
+function calculateTrend(current: number, previous: number): number {
+  if (previous === 0) return current > 0 ? 100 : 0
+  return Math.round(((current - previous) / previous) * 100)
+}
+
+export function getNetworkAnalytics(citiesToAggregate: City[], period: AnalyticsPeriod): NetworkAnalyticsData {
+  const current: NetworkTotals = {
+    revenue: 0,
+    deals: 0,
+    leads: 0,
+    pipeline: 0,
+    activity: 0,
+    partnersAll: 0,
+    partnersOnline: 0,
+    crmHours: 0,
+    activeCities: citiesToAggregate.length,
+  }
+
+  // Сбор реальных (или моковых) данных за текущий 'period' по всем городам
+  citiesToAggregate.forEach(city => {
+    // В реальной системе тут суммируется time
+    const cityHours = Math.round(city.partners.reduce((sum, p) => sum + p.crmMinutes, 0) / 60)
+    current.crmHours += cityHours
+    current.partnersAll += city.partners.length
+
+    if (city.partners.length > 0) {
+      const cityData = getCityAnalytics(city, period)
+      current.revenue += cityData.totals.commissionUsd
+      current.deals += cityData.totals.deals
+      current.leads += cityData.totals.leads
+      current.activity += cityData.totals.activity
+      current.partnersOnline += cityData.totals.activePartners
+
+      // Считаем Ожидаемую прибыль (Pipeline) как Сделки в показах * (Средний чек)
+      const avgCheck = cityData.totals.deals > 0 ? (cityData.totals.commissionUsd / cityData.totals.deals) : 4000
+      current.pipeline += Math.round(cityData.funnel.showings * avgCheck * 0.3) // 30% вероятность
+    }
+  })
+
+  // Мокаем прошлый период для вычисления %-динамики
+  const previous = period === 'allTime'
+    ? { ...current } // Для 'AllTime' нет смысла в трендах
+    : simulatePreviousPeriod(current, period)
+
+  const trendsPercent: NetworkTrends = {
+    revenue: calculateTrend(current.revenue, previous.revenue),
+    deals: calculateTrend(current.deals, previous.deals),
+    leads: calculateTrend(current.leads, previous.leads),
+    pipeline: calculateTrend(current.pipeline, previous.pipeline),
+    activity: calculateTrend(current.activity, previous.activity),
+    crmHours: calculateTrend(current.crmHours, previous.crmHours),
+  }
+
+  return {
+    period,
+    periodLabel: PERIOD_LABELS[period],
+    current,
+    previous,
+    trendsPercent,
+  }
+}
