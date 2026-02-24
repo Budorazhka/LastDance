@@ -20,9 +20,16 @@ import { formatCrmTime, getMasterPartners, getSubPartners } from '@/data/mock'
 import { getCityAnalytics, type ActivityMarker, type AnalyticsPeriod } from '@/lib/city-analytics'
 import type { City, Country, Partner, Permission } from '@/types/dashboard'
 
+interface CityOption {
+  id: string
+  name: string
+}
+
 interface CityDetailViewProps {
   city: City
   country?: Country
+  countries?: Country[]
+  citiesInActiveCountry?: CityOption[]
   onUpdatePermissions: (partnerId: string, permissions: Permission[]) => void
   onAddPartner: (partner: Partner) => void
 }
@@ -43,6 +50,8 @@ const MARKER_COLORS: Record<ActivityMarker, string> = {
 export function CityDetailView({
   city,
   country,
+  countries,
+  citiesInActiveCountry,
   onUpdatePermissions,
   onAddPartner,
 }: CityDetailViewProps) {
@@ -105,9 +114,9 @@ export function CityDetailView({
       iconClass: 'bg-emerald-50 text-emerald-600',
     },
     {
-      label: 'Активность',
+      label: 'Активные действия',
       value: analytics.totals.activity.toLocaleString('ru-RU'),
-      note: 'Звонки + чаты + подборки',
+      note: 'Звонки, показы и подборки',
       icon: BarChart3,
       iconClass: 'bg-violet-50 text-violet-600',
     },
@@ -136,6 +145,9 @@ export function CityDetailView({
           { label: country?.name ?? 'Страна' },
           { label: city.name },
         ]}
+        countries={countries}
+        activeCityId={city.id}
+        citiesInActiveCountry={citiesInActiveCountry}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">

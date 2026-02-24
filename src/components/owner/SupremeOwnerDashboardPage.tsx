@@ -367,7 +367,7 @@ export function SupremeOwnerDashboardPage() {
         <div className="flex min-w-0 flex-col gap-4">
           <StaticKpiCards
             data={globalData.staticKpi}
-            referralsLabel="Партнеры L1"
+            referralsLabel="Рефералы L1"
             secondMetric={{ label: "Рефералы L2", value: level2ReferralsTotal }}
           />
           <DynamicKpiCards
@@ -1145,7 +1145,7 @@ function PartnerAnalyticsPanel({
       colorClass: "bg-blue-50 border-blue-100",
     },
     {
-      label: "Партнёры L1",
+      label: "Рефералы L1",
       value: staticKpi.level1Referrals,
       icon: <Users className="size-5 text-purple-600" />,
       colorClass: "bg-purple-50 border-purple-100",

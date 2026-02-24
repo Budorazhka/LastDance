@@ -36,28 +36,28 @@ export function StatCard({
   const formattedPercent = trendPercent ? `${trendPercent > 0 ? '+' : ''}${trendPercent}%` : '0%'
 
   const cardContent = (
-    <Card className={cn("flex flex-col items-center justify-center p-3 sm:p-4 transition-transform hover:-translate-y-0.5 hover:shadow-lg border-2 border-slate-900 rounded-lg aspect-square", className)}>
-      <CardContent className="p-0 flex flex-col items-center justify-center text-center w-full h-full gap-1.5 sm:gap-2">
-        <div className="rounded-full bg-slate-900 p-1.5 sm:p-2 shadow-sm flex items-center justify-center shrink-0 mb-1">
+    <Card className={cn("flex flex-col items-center justify-center p-2 sm:p-2.5 transition-transform hover:-translate-y-0.5 hover:shadow-lg border-2 border-slate-900 rounded-lg h-full min-h-[88px]", className)}>
+      <CardContent className="p-0 flex flex-col items-center justify-center text-center w-full h-full gap-0.5 sm:gap-1">
+        <div className="rounded-full bg-slate-900 p-1.5 sm:p-2 shadow-sm flex items-center justify-center shrink-0">
           <Icon className="size-3 sm:size-4 text-white stroke-[2px]" />
         </div>
 
-        <div className="flex flex-col items-center w-full gap-0.5 sm:gap-1">
-          <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-black uppercase tracking-widest leading-tight">{label}</span>
+        <div className="flex flex-col items-center w-full gap-0 min-w-0">
+          <span className="text-[10px] sm:text-xs font-bold text-black uppercase tracking-widest leading-tight">{label}</span>
 
-          <div className="text-xl md:text-2xl lg:text-3xl font-black tracking-tighter text-black leading-none uppercase mt-0.5 sm:mt-1 mb-0.5">
+          <div className="text-base sm:text-lg font-black tracking-tighter text-black leading-none uppercase mt-0.5 mb-0">
             {typeof value === 'number' ? value.toLocaleString('ru-RU') : value}
           </div>
 
           {typeof trendPercent === 'number' && (
-            <div className={cn("inline-flex items-center text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded border-2 whitespace-nowrap shadow-sm", trendBgColor)}>
-              <TrendIcon className="mr-0.5 size-2.5 sm:size-3 stroke-[3px]" />
+            <div className={cn("inline-flex items-center text-[9px] sm:text-[10px] font-black px-1 py-0.5 rounded border whitespace-nowrap shadow-sm", trendBgColor)}>
+              <TrendIcon className="mr-0.5 size-2 sm:size-2.5 stroke-[3px]" />
               {formattedPercent}
             </div>
           )}
 
           {description && (
-            <p className="text-[8px] sm:text-[9px] font-bold text-slate-800 uppercase tracking-wide leading-tight mt-1.5 sm:mt-2">{description}</p>
+            <p className="text-[10px] sm:text-xs font-bold text-slate-800 uppercase tracking-wide leading-tight mt-0.5 truncate max-w-full">{description}</p>
           )}
         </div>
       </CardContent>

@@ -1,4 +1,4 @@
-﻿import type { City, Partner } from '@/types/dashboard'
+import type { City, Partner } from '@/types/dashboard'
 
 export type AnalyticsPeriod = 'week' | 'month' | 'allTime'
 export type ActivityMarker = 'green' | 'yellow' | 'red'
@@ -360,6 +360,14 @@ export interface NetworkTotals {
   partnersOnline: number
   crmHours: number
   activeCities: number
+  presentations: number
+  showings: number
+  /** Добавлено рефералов L1 (мастера) */
+  referralsL1: number
+  /** Добавлено рефералов L2 (суб-партнёры) */
+  referralsL2: number
+  /** Всего объектов за период (неделя/месяц/всё время) */
+  objectsTotal: number
 }
 
 export interface NetworkTrends {
@@ -369,6 +377,11 @@ export interface NetworkTrends {
   pipeline: number
   activity: number
   crmHours: number
+  presentations: number
+  showings: number
+  referralsL1: number
+  referralsL2: number
+  objectsTotal: number
 }
 
 export interface NetworkAnalyticsData {
@@ -392,10 +405,15 @@ function simulatePreviousPeriod(current: NetworkTotals, seed: string): NetworkTo
     leads: Math.round(current.leads * wiggle()),
     pipeline: Math.round(current.pipeline * wiggle()),
     activity: Math.round(current.activity * wiggle()),
-    partnersAll: current.partnersAll, // Обычно статично
+    partnersAll: current.partnersAll,
     partnersOnline: current.partnersOnline,
     crmHours: Math.round(current.crmHours * wiggle()),
-    activeCities: current.activeCities
+    activeCities: current.activeCities,
+    presentations: Math.round(current.presentations * wiggle()),
+    showings: Math.round(current.showings * wiggle()),
+    referralsL1: Math.round(current.referralsL1 * wiggle()),
+    referralsL2: Math.round(current.referralsL2 * wiggle()),
+    objectsTotal: Math.round(current.objectsTotal * wiggle()),
   }
 }
 
@@ -415,14 +433,22 @@ export function getNetworkAnalytics(citiesToAggregate: City[], period: Analytics
     partnersOnline: 0,
     crmHours: 0,
     activeCities: citiesToAggregate.length,
+    presentations: 0,
+    showings: 0,
+    referralsL1: 0,
+    referralsL2: 0,
+    objectsTotal: 0,
   }
 
-  // Сбор реальных (или моковых) данных за текущий 'period' по всем городам
+  const mult = period === 'week' ? 1 : period === 'month' ? 4 : 18
+
   citiesToAggregate.forEach(city => {
-    // В реальной системе тут суммируется time
     const cityHours = Math.round(city.partners.reduce((sum, p) => sum + p.crmMinutes, 0) / 60)
     current.crmHours += cityHours
     current.partnersAll += city.partners.length
+    current.referralsL1 += city.partners.filter(p => p.type === 'master').length
+    current.referralsL2 += city.partners.filter(p => p.type === 'sub').length
+    current.objectsTotal += Math.max(0, Math.round((hashString(`${city.id}-objects-${period}`) % 200) * 0.4 * mult + 80 * mult))
 
     if (city.partners.length > 0) {
       const cityData = getCityAnalytics(city, period)
@@ -431,10 +457,11 @@ export function getNetworkAnalytics(citiesToAggregate: City[], period: Analytics
       current.leads += cityData.totals.leads
       current.activity += cityData.totals.activity
       current.partnersOnline += cityData.totals.activePartners
+      current.presentations += cityData.funnel.presentations
+      current.showings += cityData.funnel.showings
 
-      // Считаем Ожидаемую прибыль (Pipeline) как Сделки в показах * (Средний чек)
       const avgCheck = cityData.totals.deals > 0 ? (cityData.totals.commissionUsd / cityData.totals.deals) : 4000
-      current.pipeline += Math.round(cityData.funnel.showings * avgCheck * 0.3) // 30% вероятность
+      current.pipeline += Math.round(cityData.funnel.showings * avgCheck * 0.3)
     }
   })
 
@@ -450,6 +477,11 @@ export function getNetworkAnalytics(citiesToAggregate: City[], period: Analytics
     pipeline: calculateTrend(current.pipeline, previous.pipeline),
     activity: calculateTrend(current.activity, previous.activity),
     crmHours: calculateTrend(current.crmHours, previous.crmHours),
+    presentations: calculateTrend(current.presentations, previous.presentations),
+    showings: calculateTrend(current.showings, previous.showings),
+    referralsL1: calculateTrend(current.referralsL1, previous.referralsL1),
+    referralsL2: calculateTrend(current.referralsL2, previous.referralsL2),
+    objectsTotal: calculateTrend(current.objectsTotal, previous.objectsTotal),
   }
 
   return {

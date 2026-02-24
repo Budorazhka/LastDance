@@ -1,4 +1,4 @@
-﻿import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import type { Breadcrumb, Country } from '@/types/dashboard'
 import georgiaFlag from '@/assets/flags/georgia.svg'
@@ -11,15 +11,22 @@ const countryFlags: Record<string, string> = {
   turkey: turkeyFlag,
 }
 
+interface CityOption {
+  id: string
+  name: string
+}
+
 interface HeaderProps {
   title: string
   breadcrumbs: Breadcrumb[]
   countries?: Country[]
   activeCityId?: string
+  citiesInActiveCountry?: CityOption[]
 }
 
-export function Header({ title, breadcrumbs, countries, activeCityId }: HeaderProps) {
+export function Header({ title, breadcrumbs, countries, activeCityId, citiesInActiveCountry }: HeaderProps) {
   const navigate = useNavigate()
+  const showCitySelector = citiesInActiveCountry && citiesInActiveCountry.length > 1
 
   return (
     <div className="mb-6">
@@ -44,35 +51,60 @@ export function Header({ title, breadcrumbs, countries, activeCityId }: HeaderPr
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
 
       {countries && countries.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {countries.map((country) => {
-            const isActive = country.cities.includes(activeCityId ?? '')
+        <div className="mt-4 flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            {countries.map((country) => {
+              const isActive = country.cities.includes(activeCityId ?? '')
 
-            return (
-              <button
-                key={country.id}
-                type="button"
-                onClick={() => navigate(`/city/${country.cities[0]}`)}
-                className={
-                  'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ' +
-                  (isActive
-                    ? 'border-slate-300 bg-slate-100 text-slate-900'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')
-                }
-              >
-                {countryFlags[country.id] ? (
-                  <img
-                    src={countryFlags[country.id]}
-                    alt={`Флаг ${country.name}`}
-                    className="h-3.5 w-5 rounded-sm border border-slate-200/80 object-cover"
-                  />
-                ) : (
-                  <span>{country.flag}</span>
-                )}
-                <span>{country.name}</span>
-              </button>
-            )
-          })}
+              return (
+                <button
+                  key={country.id}
+                  type="button"
+                  onClick={() => navigate(`/city/${country.cities[0]}`)}
+                  className={
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ' +
+                    (isActive
+                      ? 'border-slate-300 bg-slate-100 text-slate-900'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')
+                  }
+                >
+                  {countryFlags[country.id] ? (
+                    <img
+                      src={countryFlags[country.id]}
+                      alt={`Флаг ${country.name}`}
+                      className="h-3.5 w-5 rounded-sm border border-slate-200/80 object-cover"
+                    />
+                  ) : (
+                    <span>{country.flag}</span>
+                  )}
+                  <span>{country.name}</span>
+                </button>
+              )
+            })}
+          </div>
+          {showCitySelector && (
+            <div className="flex flex-wrap gap-1.5 pl-0.5">
+              <span className="mr-1 self-center text-xs font-medium text-slate-500">Город:</span>
+              {citiesInActiveCountry.map((city) => {
+                const isActive = city.id === activeCityId
+                return (
+                  <button
+                    key={city.id}
+                    type="button"
+                    onClick={() => navigate(`/city/${city.id}`)}
+                    className={
+                      'rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors ' +
+                      (isActive
+                        ? 'border-slate-400 bg-slate-900 text-white'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')
+                    }
+                  >
+                    {city.name}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

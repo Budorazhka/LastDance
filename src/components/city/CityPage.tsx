@@ -1,7 +1,7 @@
-﻿import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { CityDetailView } from './CityDetailView'
 import { useDashboard } from '@/context/DashboardContext'
-import { getCityById, getCountryByCityId } from '@/data/mock'
+import { getCityById, getCountryByCityId, countries } from '@/data/mock'
 import type { Partner, Permission } from '@/types/dashboard'
 
 export function CityPage() {
@@ -10,6 +10,11 @@ export function CityPage() {
 
   const city = cityId ? getCityById(state.cities, cityId) : undefined
   const country = city ? getCountryByCityId(city.id) : undefined
+  const citiesInActiveCountry = country
+    ? state.cities
+        .filter((c) => country.cities.includes(c.id))
+        .map((c) => ({ id: c.id, name: c.name }))
+    : undefined
 
   if (!city) {
     return (
@@ -40,6 +45,8 @@ export function CityPage() {
     <CityDetailView
       city={city}
       country={country}
+      countries={countries}
+      citiesInActiveCountry={citiesInActiveCountry}
       onUpdatePermissions={handleUpdatePermissions}
       onAddPartner={handleAddPartner}
     />
