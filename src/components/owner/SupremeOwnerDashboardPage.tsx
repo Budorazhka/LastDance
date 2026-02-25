@@ -32,7 +32,9 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { PersonalAnalyticsInsights } from "@/components/analytics-network/personal-analytics-insights"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useDashboard } from "@/context/DashboardContext"
 import { getOwnerDashboardContext } from "@/lib/mock/owner-dashboard"
+import { MailingsInbox } from "@/components/mailings/MailingsInbox"
 import {
   getAnalyticsData,
   getPeriodDateRange,
@@ -103,6 +105,7 @@ function getCabinetAnalyticsData(
 export function SupremeOwnerDashboardPage() {
   const navigate = useNavigate()
   const { cityId, partnerId } = useParams<{ cityId: string; partnerId: string }>()
+  const { state: dashboardState } = useDashboard()
   const ownerContext = useMemo(() => getOwnerDashboardContext(), [])
   const initialCabinetId =
     ownerContext.availableCabinets.find((cabinet) => cabinet.personId === partnerId)?.id ??
@@ -393,6 +396,12 @@ export function SupremeOwnerDashboardPage() {
                 setHierarchyDialogOpen(false)
               }
             }}
+          />
+          <MailingsInbox
+            mailings={dashboardState.mailings}
+            variant="cabinet"
+            title="Оповещения"
+            description="Рассылки в личный кабинет"
           />
           <Card>
             <CardHeader className="pb-2">
