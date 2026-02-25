@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   City,
   CityMapPoint,
   Country,
@@ -9,28 +9,22 @@
 
 export const createPermissions = (overrides: Record<string, boolean> = {}): Permission[] => [
   {
-    id: 'view_listings',
-    label: 'Просмотр объектов',
-    description: 'Доступ к базе объектов недвижимости',
-    enabled: overrides['view_listings'] ?? true,
-  },
-  {
-    id: 'edit_listings',
-    label: 'Редактирование объектов',
-    description: 'Создание и изменение карточек объектов',
-    enabled: overrides['edit_listings'] ?? false,
-  },
-  {
     id: 'view_leads',
     label: 'Просмотр лидов',
     description: 'Доступ к входящим заявкам',
     enabled: overrides['view_leads'] ?? true,
   },
   {
-    id: 'manage_leads',
-    label: 'Управление лидами',
-    description: 'Назначение и изменение статусов лидов',
-    enabled: overrides['manage_leads'] ?? false,
+    id: 'manage_deals',
+    label: 'Управление сделками',
+    description: 'Менять статусы сделок и этапы воронки',
+    enabled: overrides['manage_deals'] ?? false,
+  },
+  {
+    id: 'notifications',
+    label: 'Уведомления и рассылки',
+    description: 'Настраивать и отправлять уведомления партнёрам',
+    enabled: overrides['notifications'] ?? false,
   },
   {
     id: 'view_analytics',
@@ -43,18 +37,6 @@ export const createPermissions = (overrides: Record<string, boolean> = {}): Perm
     label: 'Управление командой',
     description: 'Добавление и удаление суб-партнеров',
     enabled: overrides['manage_team'] ?? false,
-  },
-  {
-    id: 'export_data',
-    label: 'Экспорт данных',
-    description: 'Выгрузка данных в CSV и Excel',
-    enabled: overrides['export_data'] ?? false,
-  },
-  {
-    id: 'api_access',
-    label: 'Доступ к API',
-    description: 'Интеграции с внешними сервисами',
-    enabled: overrides['api_access'] ?? false,
   },
 ]
 
@@ -70,7 +52,7 @@ const batumiPartners: Partner[] = [
     name: 'Mike Tyson',
     login: 'batumi.master1@testmail.com',
     type: 'master',
-    roles: ['Первичка', 'MLS вторичка'],
+    roles: ['Первичка', 'Вторичка'],
     permissions: createPermissions({
       edit_listings: true,
       manage_leads: true,
@@ -78,6 +60,7 @@ const batumiPartners: Partner[] = [
       manage_team: true,
     }),
     crmMinutes: 14520,
+    secondaryObjectsCount: 12,
   },
   {
     id: 'bat-s1',
@@ -85,9 +68,10 @@ const batumiPartners: Partner[] = [
     login: 'batumi.sub1@testmail.com',
     type: 'sub',
     masterId: 'bat-m1',
-    roles: ['Первичка', 'MLS аренда'],
+    roles: ['Первичка 2', 'Аренда'],
     permissions: createPermissions({ view_leads: true }),
     crmMinutes: 8340,
+    secondaryObjectsCount: 5,
   },
   {
     id: 'bat-s2',
@@ -95,9 +79,10 @@ const batumiPartners: Partner[] = [
     login: 'batumi.sub2@testmail.com',
     type: 'sub',
     masterId: 'bat-m1',
-    roles: ['MLS вторичка', 'Курсы'],
+    roles: ['Вторичка', 'Вторичка 2'],
     permissions: createPermissions({ edit_listings: true }),
     crmMinutes: 5670,
+    secondaryObjectsCount: 28,
   },
   {
     id: 'bat-s3',
@@ -108,6 +93,7 @@ const batumiPartners: Partner[] = [
     roles: ['Первичка'],
     permissions: createPermissions(),
     crmMinutes: 3120,
+    secondaryObjectsCount: 0,
   },
 ]
 
@@ -117,7 +103,7 @@ const phuketPartners: Partner[] = [
     name: 'Canelo Alvarez',
     login: 'phuket.master1@testmail.com',
     type: 'master',
-    roles: ['Первичка', 'MLS аренда', 'Курсы'],
+    roles: ['Первичка', 'Аренда', 'Вторичка 2'],
     permissions: createPermissions({
       edit_listings: true,
       manage_leads: true,
@@ -126,6 +112,7 @@ const phuketPartners: Partner[] = [
       export_data: true,
     }),
     crmMinutes: 21300,
+    secondaryObjectsCount: 18,
   },
   {
     id: 'phk-s1',
@@ -133,9 +120,10 @@ const phuketPartners: Partner[] = [
     login: 'phuket.sub1@testmail.com',
     type: 'sub',
     masterId: 'phk-m1',
-    roles: ['MLS аренда'],
+    roles: ['Аренда'],
     permissions: createPermissions({ manage_leads: true }),
     crmMinutes: 9870,
+    secondaryObjectsCount: 0,
   },
   {
     id: 'phk-s2',
@@ -143,9 +131,10 @@ const phuketPartners: Partner[] = [
     login: 'phuket.sub2@testmail.com',
     type: 'sub',
     masterId: 'phk-m1',
-    roles: ['Первичка', 'MLS вторичка'],
+    roles: ['Первичка', 'Вторичка'],
     permissions: createPermissions({ edit_listings: true, view_analytics: true }),
     crmMinutes: 7230,
+    secondaryObjectsCount: 9,
   },
 ]
 
@@ -155,7 +144,7 @@ const antalyaPartners: Partner[] = [
     name: 'Tyson Fury',
     login: 'antalya.master1@testmail.com',
     type: 'master',
-    roles: ['Первичка', 'MLS вторичка', 'MLS аренда'],
+    roles: ['Первичка', 'Вторичка', 'Аренда'],
     permissions: createPermissions({
       edit_listings: true,
       manage_leads: true,
@@ -165,6 +154,7 @@ const antalyaPartners: Partner[] = [
       api_access: true,
     }),
     crmMinutes: 18900,
+    secondaryObjectsCount: 22,
   },
   {
     id: 'ant-s1',
@@ -172,9 +162,10 @@ const antalyaPartners: Partner[] = [
     login: 'antalya.sub1@testmail.com',
     type: 'sub',
     masterId: 'ant-m1',
-    roles: ['Первичка', 'Курсы'],
+    roles: ['Первичка 2', 'Вторичка 2'],
     permissions: createPermissions({ manage_leads: true }),
     crmMinutes: 11200,
+    secondaryObjectsCount: 7,
   },
   {
     id: 'ant-s2',
@@ -182,9 +173,10 @@ const antalyaPartners: Partner[] = [
     login: 'antalya.sub2@testmail.com',
     type: 'sub',
     masterId: 'ant-m1',
-    roles: ['MLS вторичка', 'MLS аренда'],
+    roles: ['Вторичка 2', 'Аренда'],
     permissions: createPermissions({ edit_listings: true, view_leads: true }),
     crmMinutes: 6450,
+    secondaryObjectsCount: 14,
   },
 ]
 

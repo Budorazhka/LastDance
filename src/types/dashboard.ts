@@ -1,4 +1,9 @@
-﻿export type PartnerRole = 'Первичка' | 'MLS аренда' | 'MLS вторичка' | 'Курсы'
+export type PartnerRole =
+  | 'Первичка'
+  | 'Первичка 2'
+  | 'Вторичка'
+  | 'Вторичка 2'
+  | 'Аренда'
 
 export interface Permission {
   id: string
@@ -17,6 +22,8 @@ export interface Partner {
   roles: PartnerRole[]
   permissions: Permission[]
   crmMinutes: number
+  /** Количество объектов вторичной недвижимости */
+  secondaryObjectsCount?: number
   masterId?: string
 }
 
