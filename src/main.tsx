@@ -5,6 +5,7 @@ import { DashboardProvider } from '@/context/DashboardContext'
 import App from './App'
 import { OverviewPage } from '@/components/overview/OverviewPage'
 import { CityPage } from '@/components/city/CityPage'
+import { CityMailingsPage } from '@/components/city/CityMailingsPage'
 import { SupremeOwnerDashboardPage } from '@/components/owner/SupremeOwnerDashboardPage'
 import { RuntimeErrorBoundary } from '@/components/common/RuntimeErrorBoundary'
 import '@fontsource/montserrat/400.css'
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
           <Route element={<App />}>
             <Route index element={<OverviewPage />} />
             <Route path="city/:cityId" element={<CityPage />} />
+            <Route path="city/:cityId/mailings" element={<CityMailingsPage />} />
             <Route
               path="city/:cityId/partner/:partnerId"
               element={

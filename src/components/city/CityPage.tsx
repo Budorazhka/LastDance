@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom'
 import { CityDetailView } from './CityDetailView'
 import { useDashboard } from '@/context/DashboardContext'
 import { getCityById, getCountryByCityId, countries } from '@/data/mock'
-import type { Partner, Permission } from '@/types/dashboard'
+import type { Partner, Permission, PartnerRole } from '@/types/dashboard'
 
 export function CityPage() {
   const { cityId } = useParams<{ cityId: string }>()
@@ -33,6 +33,15 @@ export function CityPage() {
     })
   }
 
+  const handleUpdateRoles = (partnerId: string, roles: PartnerRole[]) => {
+    dispatch({
+      type: 'UPDATE_ROLES',
+      cityId: city.id,
+      partnerId,
+      roles,
+    })
+  }
+
   const handleAddPartner = (partner: Partner) => {
     dispatch({
       type: 'ADD_PARTNER',
@@ -48,6 +57,7 @@ export function CityPage() {
       countries={countries}
       citiesInActiveCountry={citiesInActiveCountry}
       onUpdatePermissions={handleUpdatePermissions}
+      onUpdateRoles={handleUpdateRoles}
       onAddPartner={handleAddPartner}
     />
   )

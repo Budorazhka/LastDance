@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Crown,
   Handshake,
+  Mail,
   Plus,
   Timer,
   Users,
@@ -18,7 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCrmTime, getMasterPartners, getSubPartners } from '@/data/mock'
 import { getCityAnalytics, type ActivityMarker, type AnalyticsPeriod } from '@/lib/city-analytics'
-import type { City, Country, Partner, Permission } from '@/types/dashboard'
+import type { City, Country, Partner, Permission, PartnerRole } from '@/types/dashboard'
 
 interface CityOption {
   id: string
@@ -31,6 +32,7 @@ interface CityDetailViewProps {
   countries?: Country[]
   citiesInActiveCountry?: CityOption[]
   onUpdatePermissions: (partnerId: string, permissions: Permission[]) => void
+  onUpdateRoles: (partnerId: string, roles: PartnerRole[]) => void
   onAddPartner: (partner: Partner) => void
 }
 
@@ -53,6 +55,7 @@ export function CityDetailView({
   countries,
   citiesInActiveCountry,
   onUpdatePermissions,
+  onUpdateRoles,
   onAddPartner,
 }: CityDetailViewProps) {
   const navigate = useNavigate()
@@ -137,8 +140,9 @@ export function CityDetailView({
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Header
+        size="large"
         title={`Город ${city.name} • Супер-админ`}
         breadcrumbs={[
           { label: 'Мир', href: '/' },
@@ -150,15 +154,15 @@ export function CityDetailView({
         citiesInActiveCountry={citiesInActiveCountry}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1.5">
           {PERIOD_OPTIONS.map((item) => (
             <button
               key={item.value}
               type="button"
               onClick={() => setPeriod(item.value)}
               className={
-                'rounded-full px-3 py-1.5 text-sm transition-colors ' +
+                'rounded-full px-4 py-2.5 text-base font-medium transition-colors ' +
                 (item.value === period
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')
@@ -168,24 +172,35 @@ export function CityDetailView({
             </button>
           ))}
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="mr-2 size-4" />
-          Добавить партнера
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="lg"
+            className="text-base"
+            onClick={() => navigate(`/city/${city.id}/mailings`)}
+          >
+            <Mail className="mr-2 size-5" />
+            Направить рассылку
+          </Button>
+          <Button onClick={() => setAddDialogOpen(true)} size="lg" className="text-base">
+            <Plus className="mr-2 size-5" />
+            Добавить партнера
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map((stat) => (
-          <Card key={stat.label} className="py-4">
-            <CardContent className="p-0 px-5">
-              <div className="flex items-center gap-3">
-                <div className={`flex size-10 items-center justify-center rounded-lg ${stat.iconClass}`}>
-                  <stat.icon className="size-5" />
+          <Card key={stat.label} className="py-5">
+            <CardContent className="p-0 px-6">
+              <div className="flex items-center gap-4">
+                <div className={`flex size-12 items-center justify-center rounded-lg ${stat.iconClass}`}>
+                  <stat.icon className="size-6" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-xl font-semibold tracking-tight">{stat.value}</p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{stat.note}</p>
+                  <p className="text-base text-muted-foreground">{stat.label}</p>
+                  <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">{stat.note}</p>
                 </div>
               </div>
             </CardContent>
@@ -195,23 +210,24 @@ export function CityDetailView({
 
 
       <Card>
-        <CardHeader className="space-y-1">
-          <CardTitle>Партнеры города</CardTitle>
-          <CardDescription>Иерархия City Master и sub-partners</CardDescription>
+        <CardHeader className="space-y-1.5 pb-4">
+          <CardTitle className="text-xl">Партнеры города</CardTitle>
+          <CardDescription className="text-base">Иерархия City Master и sub-partners</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {hierarchyRows.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Партнеры еще не добавлены</p>
+            <p className="py-10 text-center text-base text-muted-foreground">Партнеры еще не добавлены</p>
           ) : (
-            <table className="w-full min-w-[980px] text-sm">
+            <table className="w-full min-w-[1040px] text-base">
               <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 pr-4">Партнер</th>
-                  <th className="py-2 pr-4">Роль</th>
-                  <th className="py-2 pr-4">Время в системе</th>
-                  <th className="py-2 pr-4">Активность</th>
-                  <th className="py-2 pr-4">Онлайн 7д</th>
-                  <th className="py-2 text-right">Действия</th>
+                <tr className="border-b border-slate-200 text-left text-sm uppercase tracking-wide text-muted-foreground">
+                  <th className="py-3 pr-5">Партнер</th>
+                  <th className="py-3 pr-5">Роль</th>
+                  <th className="py-3 pr-5">Объекты</th>
+                  <th className="py-3 pr-5">Время в системе</th>
+                  <th className="py-3 pr-5">Активность</th>
+                  <th className="py-3 pr-5">Онлайн 7д</th>
+                  <th className="py-3 text-right">Действия</th>
                 </tr>
               </thead>
               <tbody>
@@ -227,57 +243,63 @@ export function CityDetailView({
                         (level === 1 ? 'bg-slate-50/70' : '')
                       }
                     >
-                      <td className="py-3 pr-4">
-                        <div className={`flex items-start gap-2 ${level === 1 ? 'pl-6' : ''}`}>
-                          {level === 1 && <ChevronRight className="mt-0.5 size-3.5 text-slate-400" />}
+                      <td className="py-4 pr-5">
+                        <div className={`flex items-start gap-3 ${level === 1 ? 'pl-7' : ''}`}>
+                          {level === 1 && <ChevronRight className="mt-0.5 size-4 text-slate-400" />}
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="truncate font-medium text-foreground">{partner.name}</span>
-                              {isMaster && <Crown className="size-4 text-amber-500" />}
+                            <div className="flex items-center gap-2">
+                              <span className="truncate text-base font-medium text-foreground">{partner.name}</span>
+                              {isMaster && <Crown className="size-5 text-amber-500" />}
                               {isMaster && (
-                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-700">
                                   Мастер города
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground">{partner.login}</p>
+                            <p className="mt-0.5 text-sm text-muted-foreground">{partner.login}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 pr-4">
-                        <div className="flex flex-wrap gap-1.5">
+                      <td className="py-4 pr-5">
+                        <div className="flex flex-wrap gap-2">
                           {partner.roles.length > 0 ? (
                             partner.roles.map((role) => <RoleBadge key={role} role={role} />)
                           ) : (
-                            <span className="text-xs text-muted-foreground">Роли не назначены</span>
+                            <span className="text-sm text-muted-foreground">Роли не назначены</span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 pr-4">{formatCrmTime(partner.crmMinutes)}</td>
-                      <td className="py-3 pr-4">
+                      <td className="py-4 pr-5">
+                        <span className="text-base font-medium tabular-nums text-foreground">
+                          {(partner.secondaryObjectsCount ?? 0).toLocaleString('ru-RU')}
+                        </span>
+                      </td>
+                      <td className="py-4 pr-5 text-base">{formatCrmTime(partner.crmMinutes)}</td>
+                      <td className="py-4 pr-5">
                         <div className="flex items-center gap-2">
-                          <span className={`size-2 rounded-full ${MARKER_COLORS[row.activityMarker]}`} />
-                          <span className="font-medium text-foreground">{row.activityTotal}</span>
+                          <span className={`size-2.5 rounded-full ${MARKER_COLORS[row.activityMarker]}`} />
+                          <span className="text-base font-medium text-foreground">{row.activityTotal}</span>
                         </div>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           Лиды: {row.leadsAdded} • Сделки: {row.deals}
                         </p>
                       </td>
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-1.5">
+                      <td className="py-4 pr-5">
+                        <div className="flex items-center gap-2">
                           {row.onlineWeekMarkers.map((marker, markerIndex) => (
                             <span
                               key={`${partner.id}-${markerIndex}`}
-                              className={`size-2 rounded-full ${MARKER_COLORS[marker]}`}
+                              className={`size-2.5 rounded-full ${MARKER_COLORS[marker]}`}
                             />
                           ))}
                         </div>
                       </td>
-                      <td className="py-3 text-right">
-                        <div className="flex justify-end gap-2">
+                      <td className="py-4 text-right">
+                        <div className="flex justify-end gap-3">
                           <Button
-                            size="sm"
+                            size="default"
                             variant="outline"
+                            className="text-sm"
                             onClick={() => {
                               setSelectedPartner(partner)
                               setRolesDialogOpen(true)
@@ -285,7 +307,7 @@ export function CityDetailView({
                           >
                             Доступы
                           </Button>
-                          <Button size="sm" onClick={() => navigate(`/city/${city.id}/partner/${partner.id}`)}>
+                          <Button size="default" className="text-sm" onClick={() => navigate(`/city/${city.id}/partner/${partner.id}`)}>
                             Аналитика
                           </Button>
                         </div>
@@ -303,7 +325,8 @@ export function CityDetailView({
         partner={selectedPartner}
         open={rolesDialogOpen}
         onOpenChange={setRolesDialogOpen}
-        onSave={onUpdatePermissions}
+        onSavePermissions={onUpdatePermissions}
+        onSaveRoles={onUpdateRoles}
       />
 
       <AddPartnerDialog
