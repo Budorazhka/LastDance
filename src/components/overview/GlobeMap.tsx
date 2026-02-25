@@ -141,7 +141,7 @@ export function GlobeMap({ cities }: GlobeMapProps) {
         htmlElementsData={[...countryLabels, ...cities]}
         htmlLat={(d: any) => d.coordinates[1]}
         htmlLng={(d: any) => d.coordinates[0]}
-        htmlAltitude={(d: any) => 0.01}
+        htmlAltitude={() => 0.01}
         htmlElement={(d: any) => {
           const el = document.createElement('div')
           if (d.isCountry) {

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { UserPlus } from 'lucide-react'
 import {
   Dialog,
@@ -15,13 +15,14 @@ import { Separator } from '@/components/ui/separator'
 import { createPermissions } from '@/data/mock'
 import type { Partner, PartnerRole, PartnerType } from '@/types/dashboard'
 
-const ALL_ROLES: PartnerRole[] = ['Первичка', 'MLS аренда', 'MLS вторичка', 'Курсы']
+const ALL_ROLES: PartnerRole[] = ['Первичка', 'Первичка 2', 'Вторичка', 'Вторичка 2', 'Аренда']
 
 const roleCheckboxColors: Record<PartnerRole, string> = {
   Первичка: 'accent-green-600',
-  'MLS аренда': 'accent-amber-600',
-  'MLS вторичка': 'accent-purple-600',
-  Курсы: 'accent-rose-600',
+  'Первичка 2': 'accent-emerald-600',
+  Вторичка: 'accent-purple-600',
+  'Вторичка 2': 'accent-violet-600',
+  Аренда: 'accent-amber-600',
 }
 
 interface AddPartnerDialogProps {
@@ -76,6 +77,7 @@ export function AddPartnerDialog({
       roles: selectedRoles,
       permissions: createPermissions(),
       crmMinutes: 0,
+      secondaryObjectsCount: 0,
       ...(type === 'sub' && masterId ? { masterId } : {}),
     }
 
