@@ -23,35 +23,35 @@ function getPeriodTrendText(period: AnalyticsPeriod) {
 export function BentoGrid({ analytics }: BentoGridProps) {
   const { current, trendsPercent, period } = analytics
   const trendText = getPeriodTrendText(period)
-
-  // Данные за все время не имеют динамики
   const hasTrends = period !== 'allTime'
 
   return (
-    <div className="flex flex-nowrap gap-2 w-full overflow-x-auto pb-1">
-      <div className="flex-1 min-w-0 shrink-0">
+    <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-1">
+      <div className="min-w-0 shrink-0 flex-1">
         <StatCard
-        label="Новые Лиды"
-        value={current.leads.toLocaleString('ru-RU')}
-        icon={Target}
-        description={`Из ${current.activeCities} городов`}
-        trendPercent={hasTrends ? trendsPercent.leads : undefined}
-        trendLabel={trendText}
-        className="bg-sky-50"
-      />
+          label="Новые лиды"
+          value={current.leads.toLocaleString('ru-RU')}
+          icon={Target}
+          description={`Из ${current.activeCities} городов`}
+          trendPercent={hasTrends ? trendsPercent.leads : undefined}
+          trendLabel={trendText}
+          className="bg-sky-50"
+        />
       </div>
-      <div className="flex-1 min-w-0 shrink-0">
+
+      <div className="min-w-0 shrink-0 flex-1">
         <StatCard
-        label="Презентации"
-        value={current.presentations.toLocaleString('ru-RU')}
-        icon={Presentation}
-        description="Встречи по лидам"
-        trendPercent={hasTrends ? trendsPercent.presentations : undefined}
-        trendLabel={trendText}
-        className="bg-rose-50"
-      />
+          label="Презентации"
+          value={current.presentations.toLocaleString('ru-RU')}
+          icon={Presentation}
+          description="Встречи по лидам"
+          trendPercent={hasTrends ? trendsPercent.presentations : undefined}
+          trendLabel={trendText}
+          className="bg-rose-50"
+        />
       </div>
-      <div className="flex-1 min-w-0 shrink-0">
+
+      <div className="min-w-0 shrink-0 flex-1">
         <ReferralsStatCard
           valueL1={current.referralsL1}
           valueL2={current.referralsL2}
@@ -61,46 +61,50 @@ export function BentoGrid({ analytics }: BentoGridProps) {
           className="bg-indigo-50"
         />
       </div>
-      <div className="flex-1 min-w-0 shrink-0">
+
+      <div className="min-w-0 shrink-0 flex-1">
         <StatCard
-        label="Всего объектов"
-        value={current.objectsTotal.toLocaleString('ru-RU')}
-        icon={Home}
-        description={`За ${analytics.periodLabel.toLowerCase()}`}
-        trendPercent={hasTrends ? trendsPercent.objectsTotal : undefined}
-        trendLabel={trendText}
-        className="bg-emerald-50"
-      />
+          label="Всего объектов"
+          value={current.objectsTotal.toLocaleString('ru-RU')}
+          icon={Home}
+          description={`За ${analytics.periodLabel.toLowerCase()}`}
+          trendPercent={hasTrends ? trendsPercent.objectsTotal : undefined}
+          trendLabel={trendText}
+          className="bg-emerald-50"
+        />
       </div>
-      <div className="flex-1 min-w-0 shrink-0">
+
+      <div className="min-w-0 shrink-0 flex-1">
         <StatCard
-        label="Комиссия"
-        value={`$${current.revenue.toLocaleString('ru-RU')}`}
-        icon={Wallet}
-        description="Суммарный доход сети"
-        trendPercent={hasTrends ? trendsPercent.revenue : undefined}
-        trendLabel={trendText}
-        className="bg-amber-50"
-      />
+          label="Комиссия"
+          value={`$${current.revenue.toLocaleString('ru-RU')}`}
+          icon={Wallet}
+          description="Суммарный доход сети"
+          trendPercent={hasTrends ? trendsPercent.revenue : undefined}
+          trendLabel={trendText}
+          className="bg-amber-50"
+        />
       </div>
-      <div className="flex-1 min-w-0 shrink-0">
+
+      <div className="min-w-0 shrink-0 flex-1">
         <StatCard
-        label="Время в системе"
-        value={`${current.crmHours.toLocaleString('ru-RU')}ч`}
-        icon={Clock}
-        trendPercent={hasTrends ? trendsPercent.crmHours : undefined}
-        trendLabel={trendText}
-        className="bg-slate-100"
-      />
+          label="Время в системе"
+          value={`${current.crmHours.toLocaleString('ru-RU')}ч`}
+          icon={Clock}
+          trendPercent={hasTrends ? trendsPercent.crmHours : undefined}
+          trendLabel={trendText}
+          className="bg-slate-100"
+        />
       </div>
-      <div className="flex-1 min-w-0 shrink-0">
+
+      <div className="min-w-0 shrink-0 flex-1">
         <StatCard
-        label="Сеть партнеров"
-        value={`${current.partnersOnline} / ${current.partnersAll}`}
-        icon={Users}
-        description="Сейчас онлайн / Всего"
-        className="bg-white"
-      />
+          label="Сеть рефералов"
+          value={`${current.partnersOnline} / ${current.partnersAll}`}
+          icon={Users}
+          description="Сейчас онлайн / Всего"
+          className="bg-white"
+        />
       </div>
     </div>
   )

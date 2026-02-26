@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+﻿import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Star, TrendingUp, Users, X } from "lucide-react"
 import {
@@ -495,6 +495,14 @@ export function SupremeOwnerDashboardPage() {
                 setHierarchyDialogOpen(false)
               }
             }}
+            onOpenOwnerCabinet={
+              cityId
+                ? () => {
+                    navigate(`/city/${cityId}/partner`)
+                    setHierarchyDialogOpen(false)
+                  }
+                : undefined
+            }
           />
           <MailingsInbox
             mailings={dashboardState.mailings}
@@ -705,7 +713,7 @@ export function SupremeOwnerDashboardPage() {
               </DialogTitle>
               <DialogDescription>
                 {selectedActivityPartners.length}{" "}
-                {selectedActivityPartners.length === 1 ? "партнёр" : "партнёров"} в
+                {selectedActivityPartners.length === 1 ? "партнёр" : "партнёров"} РІ
                 этой группе.
               </DialogDescription>
             </DialogHeader>
@@ -782,7 +790,7 @@ export function SupremeOwnerDashboardPage() {
                       </div>
                       <div className="text-readable-xs text-muted-high-contrast">
                         Лиды: {partner.leadsAdded.toLocaleString("ru-RU")} · 
-                        Партнёры: {partner.level1Count} · 
+                        Рефералы L1: {partner.level1Count} · 
                         Рефералы L2: {partner.level2Count}
                       </div>
                     </div>
@@ -858,17 +866,12 @@ function HierarchyPreview({
 
   const cardContent = (
     <>
-      <CardHeader className="relative pb-2">
-        <span className="pointer-events-none absolute right-3 top-1 text-2xl font-semibold text-slate-900/15">
-          ♠
-        </span>
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-readable-sm font-semibold text-high-contrast">
-            {"Карта партнёров MLM"}
+            {"Расклад рефералов MLM"}
           </CardTitle>
-          <span className="rounded-full border border-slate-400/70 bg-white/95 px-2.5 py-0.5 text-xs font-semibold tracking-[0.06em] text-slate-800">
-            {"КАРТА"}
-          </span>
+          <span className="text-xs font-medium text-slate-600">3 линии города</span>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-1">
@@ -878,14 +881,17 @@ function HierarchyPreview({
         <p className="text-readable-sm text-high-contrast">
           {"Текущий фокус:"} <span className="font-bold">{selectedLabel}</span>
         </p>
-        <div className="space-y-2 rounded-md border bg-muted/20 px-3 py-2">
+        <div className="space-y-2 rounded-md border border-slate-300/80 bg-[linear-gradient(165deg,#ffffff_0%,#f8fafc_62%,#f1f5f9_100%)] px-3 py-2">
           {masters.map((master) => (
-            <div key={master.id} className="flex items-center justify-between gap-2">
+            <div
+              key={master.id}
+              className="flex items-center justify-between gap-2 rounded-lg border border-slate-200/90 bg-white/85 px-2.5 py-1.5"
+            >
               <span className="truncate text-readable-sm font-medium text-high-contrast">
                 {master.label}
               </span>
               <Badge variant="outline" className="text-readable-xs">
-                {master.childrenIds.length} {"партн."}
+                {master.childrenIds.length} {"реф."}
               </Badge>
             </div>
           ))}
@@ -904,7 +910,7 @@ function HierarchyPreview({
       <Card
         role="button"
         tabIndex={0}
-        className="cursor-pointer transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="cursor-pointer border-slate-300 bg-[repeating-linear-gradient(45deg,rgba(30,64,175,0.04)_0px,rgba(30,64,175,0.04)_8px,rgba(255,255,255,0.95)_8px,rgba(255,255,255,0.95)_18px)] transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={onOpenTree}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -918,27 +924,30 @@ function HierarchyPreview({
     )
   }
 
-  return <Card>{cardContent}</Card>
+  return (
+    <Card className="border-slate-300 bg-[repeating-linear-gradient(45deg,rgba(30,64,175,0.04)_0px,rgba(30,64,175,0.04)_8px,rgba(255,255,255,0.95)_8px,rgba(255,255,255,0.95)_18px)]">
+      {cardContent}
+    </Card>
+  )
 }
 
-function buildLevels(hierarchy: OwnerHierarchyNode[]): OwnerHierarchyNode[][] {
-  const byId = new Map(hierarchy.map((n) => [n.id, n]))
-  const root = hierarchy.find((n) => n.role === "supreme_owner")
-  if (!root) return []
-  const levels: OwnerHierarchyNode[][] = []
-  let current: OwnerHierarchyNode[] = [root]
-  while (current.length > 0) {
-    levels.push(current)
-    const next: OwnerHierarchyNode[] = []
-    for (const node of current) {
-      for (const childId of node.childrenIds) {
-        const child = byId.get(childId)
-        if (child) next.push(child)
-      }
-    }
-    current = next
+function countBranchPartners(
+  branchRootId: string,
+  byId: Map<string, OwnerHierarchyNode>
+) {
+  let count = 0
+  const queue = [...(byId.get(branchRootId)?.childrenIds ?? [])]
+
+  while (queue.length > 0) {
+    const nextId = queue.shift()
+    if (!nextId) continue
+    const node = byId.get(nextId)
+    if (!node) continue
+    count += 1
+    queue.push(...node.childrenIds)
   }
-  return levels
+
+  return count
 }
 
 type DeckThickness = "thin" | "medium" | "thick"
@@ -955,6 +964,149 @@ function getDeckLayerOffsets(thickness: DeckThickness): number[] {
   return [8]
 }
 
+function getRoleLabel(role: OwnerHierarchyNode["role"]) {
+  if (role === "supreme_owner") return "Собственник"
+  if (role === "master_partner") return "Мастер-партнёр"
+  return "Партнёр"
+}
+
+type HierarchyBranchColumnProps = {
+  branchRoot: OwnerHierarchyNode
+  focusNode: OwnerHierarchyNode
+  childNodes: OwnerHierarchyNode[]
+  branchPartnersCount: number
+  isActiveBranch: boolean
+  onSelectNode: (personId: string) => void
+  onStepBack: () => void
+}
+
+function HierarchyBranchColumn({
+  branchRoot,
+  focusNode,
+  childNodes,
+  branchPartnersCount,
+  isActiveBranch,
+  onSelectNode,
+  onStepBack,
+}: HierarchyBranchColumnProps) {
+  const focusSummary = getPartnerSummary(focusNode.personId)
+  const focusPartnerCount = childNodes.length
+  const focusDeckThickness = resolveDeckThickness(focusPartnerCount)
+  const isRootFocus = focusNode.id === branchRoot.id
+  const focusLevel2Count = childNodes.reduce((total, node) => total + node.childrenIds.length, 0)
+
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border p-3",
+        isActiveBranch
+          ? "border-emerald-200/70 bg-emerald-950/65 shadow-[0_0_0_1px_rgba(255,255,255,0.1)]"
+          : "border-emerald-800/80 bg-emerald-950/45"
+      )}
+    >
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-lg font-semibold text-emerald-50">{branchRoot.label}</p>
+          <p className="text-sm text-emerald-100/85">В линии: {branchPartnersCount} рефералов</p>
+        </div>
+        <Badge className="border-emerald-100/45 bg-emerald-900/70 px-2.5 py-1 text-sm font-semibold text-emerald-50">
+          {focusPartnerCount} рефералов
+        </Badge>
+      </div>
+
+      <div className="rounded-2xl border border-emerald-800/70 bg-[radial-gradient(circle_at_center,rgba(6,78,59,0.34),rgba(2,44,34,0.82))] p-3">
+        <div className="relative mx-auto w-full max-w-[360px] pt-4">
+          {getDeckLayerOffsets(focusDeckThickness).map((offset, index) => (
+            <span
+              key={`${focusNode.id}-deck-${index}`}
+              aria-hidden
+              className="absolute inset-x-1 rounded-2xl border border-slate-300/55 bg-[repeating-linear-gradient(45deg,rgba(30,64,175,0.14)_0px,rgba(30,64,175,0.14)_5px,rgba(255,255,255,0.93)_5px,rgba(255,255,255,0.93)_12px)]"
+              style={{
+                top: `${offset}px`,
+                bottom: "-6px",
+              }}
+            />
+          ))}
+
+          <button
+            type="button"
+            onClick={() => onSelectNode(focusNode.personId)}
+            className={cn(
+              "relative z-10 w-full rounded-2xl border border-slate-300 bg-[linear-gradient(160deg,#ffffff_0%,#f8fafc_62%,#eef2f7_100%)] p-4 text-left shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg",
+              isActiveBranch && "ring-2 ring-emerald-300/80"
+            )}
+          >
+            <span className="absolute right-3 top-2.5 text-lg font-semibold text-slate-800/30">{"\u2666"}</span>
+            <div className="flex items-center gap-3">
+              <Avatar className="size-11 border-2 border-white shadow">
+                {focusSummary?.avatarUrl ? (
+                  <AvatarImage src={focusSummary.avatarUrl} alt={focusNode.label} />
+                ) : null}
+                <AvatarFallback className="bg-slate-700 text-base font-semibold text-white">
+                  {focusNode.label.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-lg font-semibold text-slate-900">{focusNode.label}</p>
+                <p className="text-base text-slate-600">{getRoleLabel(focusNode.role)}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-sm font-semibold text-blue-700">
+                Реф. L1: {focusNode.childrenIds.length}
+              </span>
+              <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-sm font-semibold text-violet-700">
+                Реф. L2: {focusLevel2Count}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <p className="text-sm text-emerald-100/85">Ниже прямые рефералы выбранного партнёра</p>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isRootFocus}
+            onClick={onStepBack}
+            className="border-emerald-200/45 bg-emerald-900/45 text-emerald-50 hover:bg-emerald-900/70"
+          >
+            Назад
+          </Button>
+        </div>
+
+        <div className="mt-3 space-y-2">
+          {childNodes.length === 0 ? (
+            <div className="rounded-xl border border-emerald-800/70 bg-emerald-950/65 px-3 py-3 text-base text-emerald-100/75">
+              У этого реферала сейчас нет прямых приглашений
+            </div>
+          ) : (
+            childNodes.map((childNode) => {
+              const childPartnerCount = childNode.childrenIds.length
+              return (
+                <button
+                  key={childNode.id}
+                  type="button"
+                  onClick={() => onSelectNode(childNode.personId)}
+                  className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-300 bg-slate-50/97 px-3 py-2.5 text-left transition hover:bg-white"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-semibold text-slate-900">{childNode.label}</p>
+                    <p className="text-sm text-slate-600">Прямые: {childNode.childrenIds.length}</p>
+                  </div>
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-sm font-semibold text-emerald-700">
+                    {childPartnerCount} рефералов
+                  </span>
+                </button>
+              )
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function HierarchyTreeDialog({
   open,
   onOpenChange,
@@ -962,6 +1114,7 @@ function HierarchyTreeDialog({
   cityId,
   activePersonId,
   onSelectPartner,
+  onOpenOwnerCabinet,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -969,26 +1122,133 @@ function HierarchyTreeDialog({
   cityId?: string
   activePersonId: string | null
   onSelectPartner: (personId: string) => void
+  onOpenOwnerCabinet?: () => void
 }) {
-  const [view, setView] = useState<"tree" | "analytics">("tree")
+  const [view, setView] = useState<"table" | "analytics">("table")
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
+  const [focusByBranchRootId, setFocusByBranchRootId] = useState<
+    Record<string, string>
+  >({})
+
+  const byId = useMemo(
+    () => new Map(hierarchy.map((node) => [node.id, node])),
+    [hierarchy]
+  )
+  const nodeIdByPersonId = useMemo(
+    () => new Map(hierarchy.map((node) => [node.personId, node.id] as const)),
+    [hierarchy]
+  )
+  const rootNode = useMemo(
+    () => hierarchy.find((node) => node.role === "supreme_owner") ?? null,
+    [hierarchy]
+  )
+  const rootPartners = useMemo(() => {
+    if (!rootNode) return []
+    return rootNode.childrenIds
+      .map((childId) => byId.get(childId))
+      .filter((node): node is OwnerHierarchyNode => Boolean(node))
+  }, [byId, rootNode])
+  const branchNodeIdsByRootId = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    rootPartners.forEach((rootPartner) => {
+      const branchNodeIds = new Set<string>([rootPartner.id])
+      const queue = [...rootPartner.childrenIds]
+      while (queue.length > 0) {
+        const nextId = queue.shift()
+        if (!nextId || branchNodeIds.has(nextId)) continue
+        branchNodeIds.add(nextId)
+        const nextNode = byId.get(nextId)
+        if (!nextNode) continue
+        queue.push(...nextNode.childrenIds)
+      }
+      map.set(rootPartner.id, branchNodeIds)
+    })
+    return map
+  }, [byId, rootPartners])
+  const branchPartnersCountByRootId = useMemo(() => {
+    const map = new Map<string, number>()
+    rootPartners.forEach((rootPartner) => {
+      map.set(rootPartner.id, countBranchPartners(rootPartner.id, byId))
+    })
+    return map
+  }, [byId, rootPartners])
+
+  useEffect(() => {
+    if (!open) return
+
+    const nextFocus: Record<string, string> = {}
+    rootPartners.forEach((rootPartner) => {
+      nextFocus[rootPartner.id] = rootPartner.personId
+    })
+
+    if (activePersonId) {
+      const activeNodeId = nodeIdByPersonId.get(activePersonId)
+      if (activeNodeId) {
+        const selectedBranchRoot = rootPartners.find((rootPartner) =>
+          branchNodeIdsByRootId.get(rootPartner.id)?.has(activeNodeId)
+        )
+        if (selectedBranchRoot) {
+          nextFocus[selectedBranchRoot.id] = activePersonId
+        }
+      }
+    }
+
+    setFocusByBranchRootId(nextFocus)
+    setSelectedPersonId(activePersonId ?? rootPartners[0]?.personId ?? null)
+    setView("table")
+  }, [
+    open,
+    rootPartners,
+    activePersonId,
+    nodeIdByPersonId,
+    branchNodeIdsByRootId,
+  ])
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      setView("tree")
+      setView("table")
       setSelectedPersonId(null)
+      setFocusByBranchRootId({})
     }
     onOpenChange(nextOpen)
   }
 
-  const handleCardClick = (personId: string) => {
+  const handleSelectInBranch = (branchRootId: string, personId: string) => {
+    setFocusByBranchRootId((current) => ({
+      ...current,
+      [branchRootId]: personId,
+    }))
     setSelectedPersonId(personId)
-    setView("analytics")
   }
 
-  const handleBack = () => {
-    setView("tree")
-    setSelectedPersonId(null)
+  const handleStepBackInBranch = (branchRootId: string) => {
+    const branchRoot = rootPartners.find((node) => node.id === branchRootId)
+    if (!branchRoot) return
+
+    setFocusByBranchRootId((current) => {
+      const currentPersonId = current[branchRootId] ?? branchRoot.personId
+      const currentNodeId = nodeIdByPersonId.get(currentPersonId)
+      const currentNode = currentNodeId ? byId.get(currentNodeId) : null
+
+      let nextPersonId = branchRoot.personId
+      if (currentNode?.parentId) {
+        const parentNode = byId.get(currentNode.parentId)
+        if (parentNode && parentNode.id !== rootNode?.id) {
+          nextPersonId = parentNode.personId
+        }
+      }
+
+      setSelectedPersonId(nextPersonId)
+
+      return {
+        ...current,
+        [branchRootId]: nextPersonId,
+      }
+    })
+  }
+
+  const handleBackToTable = () => {
+    setView("table")
   }
 
   const handleOpenCabinet = (personId: string) => {
@@ -996,22 +1256,52 @@ function HierarchyTreeDialog({
     handleOpenChange(false)
   }
 
-  const levels = useMemo(() => buildLevels(hierarchy), [hierarchy])
+  const selectedNode = useMemo(() => {
+    if (!selectedPersonId) return null
+    const selectedNodeId = nodeIdByPersonId.get(selectedPersonId)
+    if (!selectedNodeId) return null
+    return byId.get(selectedNodeId) ?? null
+  }, [byId, nodeIdByPersonId, selectedPersonId])
+
+  const selectedBranchRoot = useMemo(() => {
+    if (!selectedNode) return null
+    return (
+      rootPartners.find((rootPartner) =>
+        branchNodeIdsByRootId.get(rootPartner.id)?.has(selectedNode.id)
+      ) ?? null
+    )
+  }, [branchNodeIdsByRootId, rootPartners, selectedNode])
+
+  const rootSummary = rootNode ? getPartnerSummary(rootNode.personId) : null
+  const selectedNodeLevel2Count = selectedNode
+    ? selectedNode.childrenIds.reduce((total, childId) => {
+        const child = byId.get(childId)
+        return total + (child?.childrenIds.length ?? 0)
+      }, 0)
+    : 0
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent showCloseButton={false} className="!fixed !inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !w-screen !h-screen !max-w-none !rounded-none !p-0 !border-0 !m-0 bg-background overflow-hidden flex flex-col">
-        <DialogHeader className="border-b px-6 py-4 bg-muted/30 shrink-0">
+      <DialogContent
+        showCloseButton={false}
+        className="!fixed !inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !m-0 !h-screen !w-screen !max-w-none !rounded-none !border-0 !p-0 overflow-hidden flex flex-col bg-emerald-950"
+      >
+        <DialogHeader className="shrink-0 border-b border-emerald-700/60 bg-emerald-900 px-6 py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <DialogTitle className="text-readable-2xl font-medium text-high-contrast">{"Карточный стол MLM"}</DialogTitle>
-              <DialogDescription className="text-readable-lg text-muted-high-contrast">{"Выбирайте карту партнёра на столе и открывайте его аналитику."}</DialogDescription>
+              <DialogTitle className="text-4xl font-semibold text-emerald-50">
+                Карточный стол MLM
+              </DialogTitle>
+              <DialogDescription className="text-xl text-emerald-100/90">
+                На столе только карточные линии. Выбирайте карту, смотрите
+                рефералов в колоде и проваливайтесь глубже.
+              </DialogDescription>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleOpenChange(false)}
-              className="shrink-0 gap-1.5"
+              className="shrink-0 gap-1.5 border-emerald-200/35 bg-emerald-950/45 text-emerald-50 hover:bg-emerald-900/90"
             >
               <X className="size-4" />
               Закрыть
@@ -1019,24 +1309,194 @@ function HierarchyTreeDialog({
           </div>
         </DialogHeader>
 
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950">
-          {/* TREE VIEW */}
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.24),rgba(2,44,34,0.96))]">
           <div
             className={cn(
               "absolute inset-0 overflow-auto transition-all duration-500 ease-in-out",
-              view === "tree"
+              view === "table"
                 ? "opacity-100 translate-y-0 pointer-events-auto"
                 : "opacity-0 translate-y-6 pointer-events-none"
             )}
           >
-            <HierarchyOrgChart
-              levels={levels}
-              activePersonId={activePersonId}
-              onCardClick={handleCardClick}
-            />
+            <div className="mx-auto flex h-full w-full max-w-[1800px] flex-col gap-4 p-4 lg:flex-row">
+              <section className="min-h-0 flex-1 rounded-3xl border border-emerald-800/70 bg-emerald-950/35 p-4 shadow-inner shadow-black/20">
+                <div className="rounded-xl border border-emerald-700/70 bg-emerald-950/55 px-4 py-3 text-xl font-semibold text-emerald-50">
+                  {selectedNode
+                    ? `Фокус ветки: ${selectedNode.label}. Нажимайте рефералов ниже, чтобы смотреть следующую глубину.`
+                    : "Фокус ветки: Вы. Выбирайте карту и смотрите его рефералов справа."}
+                </div>
+
+                {rootPartners.length === 0 ? (
+                  <div className="mt-4 rounded-2xl border border-emerald-700/70 bg-emerald-950/55 px-4 py-6 text-lg text-emerald-100/90">
+                    Нет данных по реферальным линиям для отображения.
+                  </div>
+                ) : (
+                  <div
+                    className={cn(
+                      "mt-4 grid gap-4",
+                      rootPartners.length >= 3
+                        ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+                        : rootPartners.length === 2
+                          ? "grid-cols-1 md:grid-cols-2"
+                          : "grid-cols-1"
+                    )}
+                  >
+                    {rootPartners.map((rootPartner) => {
+                      const focusedPersonId =
+                        focusByBranchRootId[rootPartner.id] ?? rootPartner.personId
+                      const focusedNodeId =
+                        nodeIdByPersonId.get(focusedPersonId) ?? rootPartner.id
+                      const focusedNode = byId.get(focusedNodeId) ?? rootPartner
+                      const childNodes = focusedNode.childrenIds
+                        .map((childId) => byId.get(childId))
+                        .filter((node): node is OwnerHierarchyNode => Boolean(node))
+
+                      return (
+                        <HierarchyBranchColumn
+                          key={rootPartner.id}
+                          branchRoot={rootPartner}
+                          focusNode={focusedNode}
+                          childNodes={childNodes}
+                          branchPartnersCount={
+                            branchPartnersCountByRootId.get(rootPartner.id) ?? 0
+                          }
+                          isActiveBranch={selectedBranchRoot?.id === rootPartner.id}
+                          onSelectNode={(personId) =>
+                            handleSelectInBranch(rootPartner.id, personId)
+                          }
+                          onStepBack={() => handleStepBackInBranch(rootPartner.id)}
+                        />
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+
+              <aside className="w-full shrink-0 rounded-3xl border border-emerald-700/70 bg-emerald-50/90 p-4 lg:w-[360px]">
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-slate-300 bg-white/85 p-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="size-14 border-2 border-white shadow">
+                        {rootSummary?.avatarUrl ? (
+                          <AvatarImage src={rootSummary.avatarUrl} alt={rootNode?.label ?? "Вы"} />
+                        ) : null}
+                        <AvatarFallback className="bg-slate-500 text-lg font-semibold text-white">
+                          {(rootNode?.label ?? "Вы").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate text-2xl font-semibold text-slate-900">
+                          {rootNode?.label ?? "Вы"}
+                        </p>
+                        <p className="text-base text-slate-600">Собственник</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2">
+                        <p className="text-sm text-slate-600">Прямые</p>
+                        <p className="text-2xl font-semibold text-slate-900">
+                          {rootPartners.length}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2">
+                        <p className="text-sm text-slate-600">Вся ветка</p>
+                        <p className="text-2xl font-semibold text-slate-900">
+                          {Math.max(0, hierarchy.length - 1)}
+                        </p>
+                      </div>
+                    </div>
+                    {onOpenOwnerCabinet && (
+                      <Button
+                        variant="outline"
+                        className="mt-3 w-full border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+                        onClick={onOpenOwnerCabinet}
+                      >
+                        Кабинет собственника
+                      </Button>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-base font-semibold uppercase tracking-wide text-slate-700">
+                      Рефералы 1 линии
+                    </p>
+                    <div className="space-y-2">
+                      {rootPartners.map((rootPartner) => (
+                        <button
+                          key={rootPartner.id}
+                          type="button"
+                          onClick={() =>
+                            handleSelectInBranch(rootPartner.id, rootPartner.personId)
+                          }
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition",
+                            selectedBranchRoot?.id === rootPartner.id
+                              ? "border-emerald-300 bg-emerald-50"
+                              : "border-slate-300 bg-white hover:bg-slate-50"
+                          )}
+                        >
+                          <span className="truncate text-lg font-medium text-slate-900">
+                            {rootPartner.label}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="border-blue-200 bg-blue-50 text-sm text-blue-700"
+                          >
+                            Реф. L1: {rootPartner.childrenIds.length}
+                          </Badge>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {selectedNode && (
+                    <div className="rounded-2xl border border-slate-300 bg-white/90 p-3">
+                      <p className="truncate text-2xl font-semibold text-slate-900">
+                        {selectedNode.label}
+                      </p>
+                      <p className="text-base text-slate-600">
+                        {getRoleLabel(selectedNode.role)}
+                      </p>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <div className="rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2">
+                          <p className="text-sm text-slate-600">Рефералы L1</p>
+                          <p className="text-xl font-semibold text-slate-900">
+                            {selectedNode.childrenIds.length}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2">
+                          <p className="text-sm text-slate-600">Рефералы L2</p>
+                          <p className="text-xl font-semibold text-slate-900">
+                            {selectedNodeLevel2Count}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        className="mt-3 w-full bg-emerald-700 text-base text-white hover:bg-emerald-600"
+                        onClick={() => {
+                          if (!selectedPersonId) return
+                          setView("analytics")
+                        }}
+                        disabled={!selectedPersonId}
+                      >
+                        Открыть аналитику реферала
+                      </Button>
+                      {cityId && selectedPersonId && (
+                        <Button
+                          variant="outline"
+                          className="mt-2 w-full border-slate-300 bg-white text-base text-slate-800 hover:bg-slate-100"
+                          onClick={() => handleOpenCabinet(selectedPersonId)}
+                        >
+                          Открыть кабинет реферала
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </aside>
+            </div>
           </div>
 
-          {/* ANALYTICS DRILL-DOWN VIEW */}
           <div
             className={cn(
               "absolute inset-0 overflow-auto transition-all duration-500 ease-in-out",
@@ -1048,7 +1508,7 @@ function HierarchyTreeDialog({
             {selectedPersonId && (
               <PartnerAnalyticsPanel
                 personId={selectedPersonId}
-                onBack={handleBack}
+                onBack={handleBackToTable}
                 onOpenCabinet={cityId ? () => handleOpenCabinet(selectedPersonId) : undefined}
               />
             )}
@@ -1056,178 +1516,6 @@ function HierarchyTreeDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
-
-// ─── Org chart: renders all levels top-to-bottom ─────────────────────────────
-function HierarchyOrgChart({
-  levels,
-  activePersonId,
-  onCardClick,
-}: {
-  levels: OwnerHierarchyNode[][]
-  activePersonId: string | null
-  onCardClick: (personId: string) => void
-}) {
-  if (levels.length === 0) return null
-
-  return (
-    <div className="flex flex-col items-center py-10 px-6 gap-0">
-      {levels.map((levelNodes, levelIndex) => (
-        <div key={levelIndex} className="flex flex-col items-center w-full">
-          {/* Connector lines between levels */}
-          {levelIndex > 0 && (
-            <div className="flex flex-col items-center" style={{ height: 48 }} aria-hidden>
-              <div className="w-0.5 flex-1 bg-gradient-to-b from-slate-300 to-slate-400" />
-              {levelNodes.length > 1 && (
-                <div
-                  className="h-0.5 bg-gradient-to-r from-transparent via-slate-400 to-transparent"
-                  style={{ width: `${levelNodes.length * 160}px`, maxWidth: "90vw" }}
-                />
-              )}
-              <div className="w-0.5 h-3 bg-slate-400" />
-            </div>
-          )}
-          {/* Row of cards */}
-          <div className="flex flex-wrap justify-center gap-5">
-            {levelNodes.map((node) => (
-              <div key={node.id} className="flex flex-col items-center gap-0">
-                {levelIndex > 0 && levelNodes.length > 1 && (
-                  <div className="w-0.5 h-3 bg-slate-400" aria-hidden />
-                )}
-                <HierarchyNodeCard
-                  node={node}
-                  isActive={activePersonId === node.personId}
-                  onClick={() => onCardClick(node.personId)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Single partner card in the org chart ─────────────────────────────────────
-function HierarchyNodeCard({
-  node,
-  isActive,
-  onClick,
-}: {
-  node: OwnerHierarchyNode
-  isActive: boolean
-  onClick: () => void
-}) {
-  const summary = getPartnerSummary(node.personId)
-
-  const roleLabel: Record<OwnerHierarchyNode["role"], string> = {
-    supreme_owner: "Собственник",
-    master_partner: "Мастер-партнёр",
-    partner: "Партнёр",
-  }
-
-  const roleBadgeClass: Record<OwnerHierarchyNode["role"], string> = {
-    supreme_owner: "bg-emerald-100 text-emerald-800 border-emerald-300",
-    master_partner: "bg-blue-100 text-blue-800 border-blue-300",
-    partner: "bg-slate-100 text-slate-700 border-slate-300",
-  }
-
-  const avatarGradient: Record<OwnerHierarchyNode["role"], string> = {
-    supreme_owner: "from-emerald-500 to-teal-600",
-    master_partner: "from-blue-500 to-indigo-600",
-    partner: "from-slate-400 to-slate-600",
-  }
-
-  const visibleStackSize = Math.max(node.childrenIds.length, summary?.level1Count ?? 0)
-  const deckThickness = resolveDeckThickness(visibleStackSize)
-
-  return (
-    <div className="relative w-40">
-      {getDeckLayerOffsets(deckThickness).map((offset, index) => (
-        <span
-          key={`${node.id}-deck-${index}`}
-          aria-hidden
-          className="absolute inset-x-1 rounded-2xl border border-blue-200/40"
-          style={{
-            top: `${offset}px`,
-            bottom: "-6px",
-            backgroundImage:
-              "radial-gradient(circle at center, rgba(248,250,252,0.98), rgba(241,245,249,0.95) 72%), repeating-linear-gradient(45deg, rgba(30,64,175,0.14) 0px, rgba(30,64,175,0.14) 3px, transparent 3px, transparent 11px), repeating-linear-gradient(-45deg, rgba(220,38,38,0.1) 0px, rgba(220,38,38,0.1) 3px, transparent 3px, transparent 11px)",
-          }}
-        >
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-semibold text-slate-700/20">
-            {"\u2666"}
-          </span>
-        </span>
-      ))}
-
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          "group relative z-10 flex w-full flex-col items-center gap-2 rounded-2xl border bg-[linear-gradient(160deg,#ffffff_0%,#f8fafc_58%,#eef2f7_100%)] p-3 shadow-sm",
-          "transition-all duration-200 hover:shadow-xl hover:scale-105 hover:-translate-y-1",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-          isActive && "border-primary/60 bg-primary/5 shadow-md"
-        )}
-      >
-        <span className="pointer-events-none absolute right-2 top-1.5 rounded-md border border-slate-300 bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-slate-700">
-          {"КАРТА"}
-        </span>
-        <span className="pointer-events-none absolute left-2.5 top-1 text-sm font-semibold text-slate-800/35">
-          {"\u2663"}
-        </span>
-
-        <div
-          className={cn(
-            "relative rounded-full",
-            isActive && "ring-4 ring-primary ring-offset-2"
-          )}
-        >
-          <Avatar className="size-20 border-2 border-white shadow-md">
-            {summary?.avatarUrl ? (
-              <AvatarImage src={summary.avatarUrl} alt={node.label} />
-            ) : null}
-            <AvatarFallback
-              className={cn(
-                "text-xl font-bold text-white bg-gradient-to-br",
-                avatarGradient[node.role]
-              )}
-            >
-              {node.label.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          {summary?.isOnline && (
-            <span className="absolute bottom-0.5 right-0.5 size-3.5 rounded-full bg-emerald-500 border-2 border-white" />
-          )}
-        </div>
-
-        <span className="w-full text-center text-xs font-semibold text-high-contrast leading-tight line-clamp-2">
-          {node.label}
-        </span>
-
-        <span
-          className={cn(
-            "w-full text-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border",
-            roleBadgeClass[node.role]
-          )}
-        >
-          {roleLabel[node.role]}
-        </span>
-
-        <div className="flex flex-wrap justify-center gap-1">
-          <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">
-            L1: {node.childrenIds.length}
-          </span>
-          {summary && (
-            <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.5 rounded-full font-medium">
-              {summary.leadsAdded}
-            </span>
-          )}
-        </div>
-      </button>
-    </div>
   )
 }
 
@@ -1250,7 +1538,7 @@ function PartnerAnalyticsPanel({
           <ArrowLeft className="size-4 mr-2" />
           Назад
         </Button>
-        <p className="text-muted-high-contrast">Данные партнёра не найдены.</p>
+        <p className="text-muted-high-contrast">Данные реферала не найдены.</p>
       </div>
     )
   }
@@ -1300,7 +1588,7 @@ function PartnerAnalyticsPanel({
         className="-ml-2 self-start text-muted-high-contrast hover:text-high-contrast"
       >
         <ArrowLeft className="size-4 mr-2" />
-        Вернуться к дереву
+        Вернуться к карточному столу
       </Button>
 
       {/* Identity block */}
@@ -1359,9 +1647,10 @@ function PartnerAnalyticsPanel({
           size="lg"
           className="self-start"
         >
-          Открыть кабинет партнёра
+          Открыть кабинет реферала
         </Button>
       )}
     </div>
   )
 }
+
