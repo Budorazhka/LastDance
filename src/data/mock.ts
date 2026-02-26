@@ -49,7 +49,7 @@ export const countries: Country[] = [
 const batumiPartners: Partner[] = [
   {
     id: 'bat-m1',
-    name: 'Mike Tyson',
+    name: '\u041c\u0430\u0439\u043a \u0422\u0430\u0439\u0441\u043e\u043d',
     login: 'batumi.master1@testmail.com',
     type: 'master',
     roles: ['Первичка', 'Вторичка'],
@@ -64,10 +64,9 @@ const batumiPartners: Partner[] = [
   },
   {
     id: 'bat-s1',
-    name: 'Muhammad Ali',
+    name: '\u041c\u0443\u0445\u0430\u043c\u043c\u0435\u0434 \u0410\u043b\u0438',
     login: 'batumi.sub1@testmail.com',
     type: 'sub',
-    masterId: 'bat-m1',
     roles: ['Первичка 2', 'Аренда'],
     permissions: createPermissions({ view_leads: true }),
     crmMinutes: 8340,
@@ -75,25 +74,13 @@ const batumiPartners: Partner[] = [
   },
   {
     id: 'bat-s2',
-    name: 'Floyd Mayweather',
+    name: '\u0424\u043b\u043e\u0439\u0434 \u041c\u0435\u0439\u0432\u0435\u0437\u0435\u0440',
     login: 'batumi.sub2@testmail.com',
     type: 'sub',
-    masterId: 'bat-m1',
     roles: ['Вторичка', 'Вторичка 2'],
     permissions: createPermissions({ edit_listings: true }),
     crmMinutes: 5670,
     secondaryObjectsCount: 28,
-  },
-  {
-    id: 'bat-s3',
-    name: 'Manny Pacquiao',
-    login: 'batumi.sub3@testmail.com',
-    type: 'sub',
-    masterId: 'bat-m1',
-    roles: ['Первичка'],
-    permissions: createPermissions(),
-    crmMinutes: 3120,
-    secondaryObjectsCount: 0,
   },
 ]
 
@@ -194,7 +181,7 @@ export const cityMapPoints: CityMapPoint[] = [
     countryId: 'georgia',
     coordinates: [41.64, 41.64],
     labelOffset: [-28, -22],
-    partnersCount: 4,
+    partnersCount: batumiPartners.length,
     totalRevenue: 127500,
   },
   {
@@ -227,7 +214,7 @@ export const cityMapPoints: CityMapPoint[] = [
 ]
 
 export const globalStats: GlobalStats = {
-  totalPartners: 10,
+  totalPartners: 9,
   totalRevenue: 550500,
   totalDeals: 47,
   activeCities: 3,
