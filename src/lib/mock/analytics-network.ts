@@ -480,6 +480,75 @@ const basePartners: BasePartner[] = partnerRoster.map((partner, index) => {
 
 export const CURRENT_USER_ID = "partner-11";
 
+const BATUMI_PRIMARY_PARTNER_IDS = ["partner-2", "partner-1", "partner-6"];
+
+function buildReferralChildrenMap() {
+    const allPartnerIds = basePartners.map((partner) => partner.id);
+    const validPrimaryPartners: string[] = BATUMI_PRIMARY_PARTNER_IDS.filter((partnerId) =>
+        allPartnerIds.includes(partnerId)
+    );
+
+    const map = new Map<string, string[]>();
+    map.set(CURRENT_USER_ID, []);
+    allPartnerIds.forEach((partnerId) => {
+        map.set(partnerId, []);
+    });
+
+    // Owner has exactly three key Batumi lines in this scenario.
+    validPrimaryPartners.forEach((partnerId) => {
+        map.get(CURRENT_USER_ID)?.push(partnerId);
+    });
+
+    const assigned = new Set<string>(validPrimaryPartners);
+    const remaining = allPartnerIds.filter(
+        (partnerId) => partnerId !== CURRENT_USER_ID && !assigned.has(partnerId)
+    );
+
+    // First distribute a direct layer under the three key partners.
+    const directSeed = createRng(seedFromString("mlm-direct-distribution-v1"));
+    const firstWaveCount = Math.min(remaining.length, 18);
+    const branchQueue = [...validPrimaryPartners];
+
+    for (let index = 0; index < firstWaveCount; index += 1) {
+        const childId = remaining[index];
+        const fallbackParent = validPrimaryPartners[index % Math.max(validPrimaryPartners.length, 1)];
+        const parentIndex = Math.floor(directSeed() * Math.max(validPrimaryPartners.length, 1));
+        const parentId = validPrimaryPartners[parentIndex] ?? fallbackParent;
+        if (!parentId) continue;
+
+        map.get(parentId)?.push(childId);
+        assigned.add(childId);
+        branchQueue.push(childId);
+    }
+
+    // Then deepen branches to make visible "deck thickness" and MLM lines.
+    const deepSeed = createRng(seedFromString("mlm-depth-distribution-v1"));
+    for (let index = firstWaveCount; index < remaining.length; index += 1) {
+        const childId = remaining[index];
+        if (branchQueue.length === 0) {
+            const fallback = validPrimaryPartners[index % Math.max(validPrimaryPartners.length, 1)];
+            if (fallback) branchQueue.push(fallback);
+        }
+        if (branchQueue.length === 0) continue;
+
+        const sampleSize = Math.min(branchQueue.length, 10);
+        const sampledIndex = Math.floor(deepSeed() * sampleSize);
+        const parentId = branchQueue[sampledIndex];
+        if (!parentId) continue;
+
+        map.get(parentId)?.push(childId);
+        assigned.add(childId);
+
+        // Rotate queue to keep branches balanced but still hierarchical.
+        branchQueue.splice(sampledIndex, 1);
+        branchQueue.push(parentId, childId);
+    }
+
+    return map;
+}
+
+const referralChildrenByPartnerId = buildReferralChildrenMap();
+
 export function getPartnerSummary(id: string) {
     return basePartners.find((partner) => partner.id === id) ?? null;
 }
@@ -794,18 +863,6 @@ export function getAnalyticsData(period: AnalyticsPeriod): AnalyticsData {
 
 const personPeriodCache: Record<string, PersonAnalyticsData> = {};
 
-function shuffleWithSeed<T>(items: T[], seed: number): T[] {
-    const rng = createRng(seed);
-    const result = [...items];
-
-    for (let i = result.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [result[i], result[j]] = [result[j], result[i]];
-    }
-
-    return result;
-}
-
 function getPartnerIndex(partnerId: string): number {
     return basePartners.findIndex((partner) => partner.id === partnerId);
 }
@@ -832,15 +889,8 @@ function getPersonDynamicKpi(personId: string, period: AnalyticsPeriod): Dynamic
     };
 }
 
-function getReferralIds(personId: string): string[] {
-    const owner = getPartnerSummary(personId);
-    if (!owner) return [];
-
-    const candidates = basePartners.filter((partner) => partner.id !== personId);
-    const shuffled = shuffleWithSeed(candidates, seedFromString(`referrals-${personId}`));
-    const count = Math.min(shuffled.length, Math.max(4, Math.min(owner.level2Count, 12)));
-
-    return shuffled.slice(0, count).map((partner) => partner.id);
+export function getDirectReferralIds(personId: string): string[] {
+    return referralChildrenByPartnerId.get(personId) ?? [];
 }
 
 function getPresence(
@@ -898,7 +948,7 @@ function generatePersonReferrals(
     period: AnalyticsPeriod,
     totals: DynamicKpi
 ): PartnerRow[] {
-    const referralIds = getReferralIds(personId);
+    const referralIds = getDirectReferralIds(personId);
     const referralPartners = referralIds
         .map((id) => getPartnerSummary(id))
         .filter((partner): partner is BasePartner => partner !== null && partner.id !== personId);

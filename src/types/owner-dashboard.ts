@@ -23,4 +23,5 @@ export interface OwnerDashboardContext {
   currentUserId: string
   availableCabinets: OwnerCabinetOption[]
   hierarchy: OwnerHierarchyNode[]
+  analyticsPersonIdByPersonId: Record<string, string>
 }
