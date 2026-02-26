@@ -24,6 +24,14 @@ createRoot(document.getElementById('root')!).render(
             <Route path="city/:cityId" element={<CityPage />} />
             <Route path="city/:cityId/mailings" element={<CityMailingsPage />} />
             <Route
+              path="city/:cityId/partner"
+              element={
+                <RuntimeErrorBoundary>
+                  <SupremeOwnerDashboardPage />
+                </RuntimeErrorBoundary>
+              }
+            />
+            <Route
               path="city/:cityId/partner/:partnerId"
               element={
                 <RuntimeErrorBoundary>

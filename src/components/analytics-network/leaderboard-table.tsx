@@ -114,12 +114,12 @@ export function LeaderboardTable({
 
     if (partners.length === 0) {
         return (
-            <Card className="w-full overflow-hidden">
+            <Card className={cn("w-full overflow-hidden", className)}>
                 <CardHeader className="pb-3">
                     <CardTitle className="text-center">Лидерборд: Мои рефералы L1</CardTitle>
                 </CardHeader>
-                <CardContent className="px-6 pb-6">
-                    <div className="flex flex-col items-center gap-2 text-center py-10">
+                <CardContent className="flex flex-1 items-center justify-center px-6 pb-6">
+                    <div className="flex flex-col items-center gap-2 py-10 text-center">
                         <p className="text-base font-medium">Ничего не найдено</p>
                         <p className="text-sm text-muted-foreground">
                             Попробуйте изменить поиск или фильтры.
@@ -136,11 +136,11 @@ export function LeaderboardTable({
     }
 
     return (
-        <Card className={cn("w-full overflow-hidden", className)}>
+        <Card className={cn("flex h-full min-h-0 w-full flex-col overflow-hidden", className)}>
             <CardHeader className="pb-3">
                 <CardTitle className="text-center">Лидерборд: Мои рефералы L1</CardTitle>
             </CardHeader>
-            <CardContent className="px-0 pb-0">
+            <CardContent className="flex min-h-0 flex-1 flex-col px-0 pb-0">
                 <div className="space-y-2 px-3 pb-3 md:hidden">
                     {partners.map((partner) => (
                         <MobilePartnerCard
@@ -152,8 +152,9 @@ export function LeaderboardTable({
                         />
                     ))}
                 </div>
-                <div className="hidden overflow-x-auto md:block">
-                    <div className="max-h-[75vh] overflow-y-auto">
+                <div className="hidden min-h-0 flex-1 md:block">
+                    <div className="h-full overflow-x-auto">
+                        <div className="h-full overflow-y-auto">
                         <Table className="min-w-[860px]">
                             <TableHeader className="sticky top-0 z-10 bg-background">
                                 <TableRow className="hover:bg-transparent bg-background">
@@ -298,6 +299,7 @@ export function LeaderboardTable({
                                 ))}
                             </TableBody>
                         </Table>
+                        </div>
                     </div>
                 </div>
             </CardContent>
@@ -356,4 +358,3 @@ function MobilePartnerCard({
         </div>
     );
 }
-

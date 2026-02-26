@@ -7,9 +7,9 @@ const navItems = [
 
 export function AnalyticsNavLinks({ className }: { className?: string }) {
   const location = useLocation()
-  const { cityId, partnerId } = useParams<{ cityId: string; partnerId: string }>()
+  const { cityId } = useParams<{ cityId: string; partnerId: string }>()
   const activeId = 'owner'
-  const basePath = cityId && partnerId ? `/city/${cityId}/partner/${partnerId}` : location.pathname
+  const basePath = cityId ? `/city/${cityId}/partner` : location.pathname
 
   return (
     <span className={cn('inline-flex max-w-full flex-wrap items-center justify-center gap-2', className)}>

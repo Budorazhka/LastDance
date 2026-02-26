@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Building2, GitBranch, Star, TrendingUp, Users, X } from "lucide-react"
+import { ArrowLeft, Star, TrendingUp, Users, X } from "lucide-react"
 import {
   ActivityCalendarCard,
   ActivityChart,
@@ -72,9 +72,10 @@ type NormalizedAnalyticsData = {
 
 function getCabinetAnalyticsData(
   cabinet: OwnerCabinetOption | undefined,
-  period: AnalyticsPeriod
+  period: AnalyticsPeriod,
+  analyticsPersonIdByPersonId: Record<string, string>
 ): NormalizedAnalyticsData | null {
-  if (!cabinet || cabinet.scope === "network") {
+  const normalizeNetworkData = () => {
     const networkData = getAnalyticsData(period)
     return {
       periodLabel: networkData.periodLabel,
@@ -87,9 +88,15 @@ function getCabinetAnalyticsData(
     }
   }
 
+  if (!cabinet || cabinet.scope === "network") {
+    return normalizeNetworkData()
+  }
+
   if (!cabinet.personId) return null
-  const personData = getPersonAnalyticsData(cabinet.personId, period)
-  if (!personData) return null
+  const analyticsPersonId =
+    analyticsPersonIdByPersonId[cabinet.personId] ?? cabinet.personId
+  const personData = getPersonAnalyticsData(analyticsPersonId, period)
+  if (!personData) return normalizeNetworkData()
 
   return {
     periodLabel: personData.periodLabel,
@@ -106,7 +113,14 @@ export function SupremeOwnerDashboardPage() {
   const navigate = useNavigate()
   const { cityId, partnerId } = useParams<{ cityId: string; partnerId: string }>()
   const { state: dashboardState } = useDashboard()
-  const ownerContext = useMemo(() => getOwnerDashboardContext(), [])
+  const cityPartners = useMemo(
+    () => dashboardState.cities.find((city) => city.id === cityId)?.partners ?? [],
+    [dashboardState.cities, cityId]
+  )
+  const ownerContext = useMemo(
+    () => getOwnerDashboardContext(cityPartners),
+    [cityPartners]
+  )
   const initialCabinetId =
     ownerContext.availableCabinets.find((cabinet) => cabinet.personId === partnerId)?.id ??
     ownerContext.availableCabinets[0]?.id ??
@@ -144,6 +158,32 @@ export function SupremeOwnerDashboardPage() {
     [ownerContext.availableCabinets, selectedCabinetId]
   )
 
+  const rootPartnerPersonIds = useMemo(() => {
+    const rootNode =
+      ownerContext.hierarchy.find((node) => node.role === "supreme_owner") ?? null
+    if (!rootNode) return new Set<string>()
+    const byId = new Map(ownerContext.hierarchy.map((node) => [node.id, node]))
+    return new Set(
+      rootNode.childrenIds
+        .map((nodeId) => byId.get(nodeId)?.personId)
+        .filter((personId): personId is string => Boolean(personId))
+    )
+  }, [ownerContext.hierarchy])
+
+  const cabinetSwitcherOptions = useMemo(() => {
+    const compactOptions = ownerContext.availableCabinets.filter((cabinet) => {
+      if (cabinet.scope !== "partner") return true
+      return Boolean(cabinet.personId && rootPartnerPersonIds.has(cabinet.personId))
+    })
+    const selectedOption = ownerContext.availableCabinets.find(
+      (cabinet) => cabinet.id === selectedCabinetId
+    )
+    if (selectedOption && !compactOptions.some((cabinet) => cabinet.id === selectedOption.id)) {
+      return [...compactOptions, selectedOption]
+    }
+    return compactOptions
+  }, [ownerContext.availableCabinets, rootPartnerPersonIds, selectedCabinetId])
+
   useEffect(() => {
     if (!partnerId) return
     const byRoute = ownerContext.availableCabinets.find((cabinet) => cabinet.personId === partnerId)
@@ -152,45 +192,95 @@ export function SupremeOwnerDashboardPage() {
     }
   }, [ownerContext.availableCabinets, partnerId, selectedCabinetId])
 
+  useEffect(() => {
+    if (partnerId) return
+    if (selectedCabinetId !== "network") {
+      setSelectedCabinetId("network")
+    }
+  }, [partnerId, selectedCabinetId])
+
+  useEffect(() => {
+    const exists = ownerContext.availableCabinets.some(
+      (cabinet) => cabinet.id === selectedCabinetId
+    )
+    if (!exists) {
+      setSelectedCabinetId(ownerContext.availableCabinets[0]?.id ?? "network")
+    }
+  }, [ownerContext.availableCabinets, selectedCabinetId])
+
   const globalData = useMemo(
-    () => getCabinetAnalyticsData(selectedCabinet, globalPeriod),
-    [selectedCabinet, globalPeriod]
+    () =>
+      getCabinetAnalyticsData(
+        selectedCabinet,
+        globalPeriod,
+        ownerContext.analyticsPersonIdByPersonId
+      ),
+    [ownerContext.analyticsPersonIdByPersonId, selectedCabinet, globalPeriod]
   )
   const todayData = useMemo(
-    () => getCabinetAnalyticsData(selectedCabinet, "week"),
-    [selectedCabinet]
+    () =>
+      getCabinetAnalyticsData(
+        selectedCabinet,
+        "week",
+        ownerContext.analyticsPersonIdByPersonId
+      ),
+    [ownerContext.analyticsPersonIdByPersonId, selectedCabinet]
   )
   const leadsData = useMemo(
     () =>
-      getCabinetAnalyticsData(selectedCabinet, leadsPeriod)?.leadsTimeseries ?? [],
-    [selectedCabinet, leadsPeriod]
+      getCabinetAnalyticsData(
+        selectedCabinet,
+        leadsPeriod,
+        ownerContext.analyticsPersonIdByPersonId
+      )?.leadsTimeseries ?? [],
+    [ownerContext.analyticsPersonIdByPersonId, selectedCabinet, leadsPeriod]
   )
   const activityData = useMemo(
     () =>
-      getCabinetAnalyticsData(selectedCabinet, activityPeriod)
+      getCabinetAnalyticsData(
+        selectedCabinet,
+        activityPeriod,
+        ownerContext.analyticsPersonIdByPersonId
+      )
         ?.activityTimeseries ?? [],
-    [selectedCabinet, activityPeriod]
+    [ownerContext.analyticsPersonIdByPersonId, selectedCabinet, activityPeriod]
   )
   const monthCalendarData = useMemo(
     () =>
-      getCabinetAnalyticsData(selectedCabinet, "month")?.activityTimeseries ?? [],
-    [selectedCabinet]
+      getCabinetAnalyticsData(
+        selectedCabinet,
+        "month",
+        ownerContext.analyticsPersonIdByPersonId
+      )?.activityTimeseries ?? [],
+    [ownerContext.analyticsPersonIdByPersonId, selectedCabinet]
   )
   const allTimeCalendarData = useMemo(
     () =>
-      getCabinetAnalyticsData(selectedCabinet, "allTime")
+      getCabinetAnalyticsData(
+        selectedCabinet,
+        "allTime",
+        ownerContext.analyticsPersonIdByPersonId
+      )
         ?.activityTimeseries ?? [],
-    [selectedCabinet]
+    [ownerContext.analyticsPersonIdByPersonId, selectedCabinet]
   )
   const topReferralsPartners = useMemo(
     () =>
-      getCabinetAnalyticsData(selectedCabinet, topReferralsPeriod)?.partners ?? [],
-    [selectedCabinet, topReferralsPeriod]
+      getCabinetAnalyticsData(
+        selectedCabinet,
+        topReferralsPeriod,
+        ownerContext.analyticsPersonIdByPersonId
+      )?.partners ?? [],
+    [ownerContext.analyticsPersonIdByPersonId, selectedCabinet, topReferralsPeriod]
   )
   const engagementPartners = useMemo(
     () =>
-      getCabinetAnalyticsData(selectedCabinet, engagementPeriod)?.partners ?? [],
-    [selectedCabinet, engagementPeriod]
+      getCabinetAnalyticsData(
+        selectedCabinet,
+        engagementPeriod,
+        ownerContext.analyticsPersonIdByPersonId
+      )?.partners ?? [],
+    [ownerContext.analyticsPersonIdByPersonId, selectedCabinet, engagementPeriod]
   )
 
   const selectedActivityPartners = useMemo(
@@ -356,17 +446,22 @@ export function SupremeOwnerDashboardPage() {
 
       <CabinetSwitcher
         value={selectedCabinetId}
-        options={ownerContext.availableCabinets}
+        options={cabinetSwitcherOptions}
         onValueChange={(value) => {
           setSelectedCabinetId(value)
           const selected = ownerContext.availableCabinets.find((cabinet) => cabinet.id === value)
-          if (cityId && selected?.personId) {
+          if (!cityId || !selected) return
+          if (selected.scope === "network") {
+            navigate(`/city/${cityId}/partner`)
+            return
+          }
+          if (selected.personId) {
             navigate(`/city/${cityId}/partner/${selected.personId}`)
           }
         }}
       />
 
-      <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
+      <div className="grid items-stretch gap-5 lg:grid-cols-[380px_1fr]">
         <div className="flex min-w-0 flex-col gap-4">
           <StaticKpiCards
             data={globalData.staticKpi}
@@ -391,6 +486,10 @@ export function SupremeOwnerDashboardPage() {
             cityId={cityId ?? undefined}
             activePersonId={selectedCabinet?.personId ?? null}
             onSelectPartner={(personId) => {
+              const cabinet = ownerContext.availableCabinets.find((item) => item.personId === personId)
+              if (cabinet) {
+                setSelectedCabinetId(cabinet.id)
+              }
               if (cityId) {
                 navigate(`/city/${cityId}/partner/${personId}`)
                 setHierarchyDialogOpen(false)
@@ -480,7 +579,7 @@ export function SupremeOwnerDashboardPage() {
           </Card>
         </div>
 
-        <div className="flex w-full flex-col gap-4 self-start">
+        <div className="flex w-full min-h-0 flex-col gap-4 self-start">
           <div className="flex flex-col gap-3 rounded-lg border bg-card px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-4">
             <div className="min-w-0 flex-1">
               <Input
@@ -523,7 +622,7 @@ export function SupremeOwnerDashboardPage() {
             sortDirection={sortDirection}
             onSortChange={handleSortChange}
             onResetFilters={handleResetFilters}
-            className="w-full"
+            className="w-full flex-1 min-h-0"
           />
         </div>
       </div>
@@ -752,66 +851,49 @@ function HierarchyPreview({
         .map((id) => byId.get(id))
         .filter((node): node is OwnerHierarchyNode => Boolean(node))
     : []
+  const partnersCount = Math.max(0, hierarchy.length - 1)
+  const selectedLabel = activePersonId
+    ? hierarchy.find((node) => node.personId === activePersonId)?.label ?? "не выбран"
+    : "не выбран"
 
   const cardContent = (
     <>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-readable-sm text-high-contrast">Иерархия партнеров</CardTitle>
+      <CardHeader className="relative pb-2">
+        <span className="pointer-events-none absolute right-3 top-1 text-2xl font-semibold text-slate-900/15">
+          ♠
+        </span>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-readable-sm font-semibold text-high-contrast">
+            {"Карта партнёров MLM"}
+          </CardTitle>
+          <span className="rounded-full border border-slate-400/70 bg-white/95 px-2.5 py-0.5 text-xs font-semibold tracking-[0.06em] text-slate-800">
+            {"КАРТА"}
+          </span>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-1">
-        <div className="rounded-md border bg-muted/20 px-3 py-2">
-          <div className="flex items-center gap-2">
-            <Building2 className="size-4 text-emerald-600" />
-            <span className="text-readable-sm font-medium text-high-contrast">Вы — Основатель сети</span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          {masters.map((master) => {
-            const children = master.childrenIds
-              .map((id) => byId.get(id))
-              .filter((node): node is OwnerHierarchyNode => Boolean(node))
-            const isActive = activePersonId === master.personId
-            return (
-              <div key={master.id} className="rounded-md border bg-background p-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <GitBranch className="size-4 text-blue-600" />
-                    <p className="truncate text-readable-sm font-medium text-high-contrast">{master.label}</p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-readable-xs",
-                      isActive &&
-                        "border-blue-500/40 bg-blue-500/10 text-blue-700"
-                    )}
-                  >
-                    {children.length} партнеров
-                  </Badge>
-                </div>
-                {children.length > 0 && (
-                  <p className="mt-1.5 text-readable-xs text-muted-high-contrast">
-                    {children
-                      .slice(0, 3)
-                      .map((child) => child.label)
-                      .join(", ")}
-                    {children.length > 3 ? "..." : ""}
-                  </p>
-                )}
-              </div>
-            )
-          })}
+        <p className="text-readable-sm text-high-contrast">
+          {"Всего в структуре:"} <span className="font-bold">{partnersCount}</span>
+        </p>
+        <p className="text-readable-sm text-high-contrast">
+          {"Текущий фокус:"} <span className="font-bold">{selectedLabel}</span>
+        </p>
+        <div className="space-y-2 rounded-md border bg-muted/20 px-3 py-2">
+          {masters.map((master) => (
+            <div key={master.id} className="flex items-center justify-between gap-2">
+              <span className="truncate text-readable-sm font-medium text-high-contrast">
+                {master.label}
+              </span>
+              <Badge variant="outline" className="text-readable-xs">
+                {master.childrenIds.length} {"партн."}
+              </Badge>
+            </div>
+          ))}
           {masters.length === 0 && (
-            <div className="rounded-md border border-dashed px-3 py-4 text-center text-readable-xs text-muted-high-contrast">
-              Нет данных по иерархии.
+            <div className="text-readable-xs text-muted-high-contrast">
+              {"Нет данных по иерархии."}
             </div>
           )}
-        </div>
-
-        <div className="flex items-center gap-2 rounded-md border bg-muted/15 px-3 py-2 text-readable-xs text-muted-high-contrast">
-          <Users className="size-3.5" />
-          {onOpenTree ? "Нажмите, чтобы открыть дерево партнёров" : "Переключайте кабинеты, чтобы смотреть аналитику по сети и по каждому партнеру."}
         </div>
       </CardContent>
     </>
@@ -839,7 +921,6 @@ function HierarchyPreview({
   return <Card>{cardContent}</Card>
 }
 
-// ─── Helper: compute level-by-level (BFS) array from flat hierarchy ──────────
 function buildLevels(hierarchy: OwnerHierarchyNode[]): OwnerHierarchyNode[][] {
   const byId = new Map(hierarchy.map((n) => [n.id, n]))
   const root = hierarchy.find((n) => n.role === "supreme_owner")
@@ -858,6 +939,20 @@ function buildLevels(hierarchy: OwnerHierarchyNode[]): OwnerHierarchyNode[][] {
     current = next
   }
   return levels
+}
+
+type DeckThickness = "thin" | "medium" | "thick"
+
+function resolveDeckThickness(size: number): DeckThickness {
+  if (size >= 7) return "thick"
+  if (size >= 3) return "medium"
+  return "thin"
+}
+
+function getDeckLayerOffsets(thickness: DeckThickness): number[] {
+  if (thickness === "thick") return [8, 14, 20]
+  if (thickness === "medium") return [8, 14]
+  return [8]
 }
 
 function HierarchyTreeDialog({
@@ -909,12 +1004,8 @@ function HierarchyTreeDialog({
         <DialogHeader className="border-b px-6 py-4 bg-muted/30 shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <DialogTitle className="text-readable-2xl font-medium text-high-contrast">
-                Иерархия партнёров
-              </DialogTitle>
-              <DialogDescription className="text-readable-lg text-muted-high-contrast">
-                Дерево партнёров с визуализацией MLM-структуры. Нажмите на партнёра, чтобы открыть его аналитику.
-              </DialogDescription>
+              <DialogTitle className="text-readable-2xl font-medium text-high-contrast">{"Карточный стол MLM"}</DialogTitle>
+              <DialogDescription className="text-readable-lg text-muted-high-contrast">{"Выбирайте карту партнёра на столе и открывайте его аналитику."}</DialogDescription>
             </div>
             <Button
               variant="outline"
@@ -928,7 +1019,7 @@ function HierarchyTreeDialog({
           </div>
         </DialogHeader>
 
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50/30">
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950">
           {/* TREE VIEW */}
           <div
             className={cn(
@@ -1048,71 +1139,98 @@ function HierarchyNodeCard({
     partner: "from-slate-400 to-slate-600",
   }
 
+  const visibleStackSize = Math.max(node.childrenIds.length, summary?.level1Count ?? 0)
+  const deckThickness = resolveDeckThickness(visibleStackSize)
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "group flex flex-col items-center gap-2 w-36 p-3 rounded-2xl border bg-white shadow-sm",
-        "transition-all duration-200 hover:shadow-xl hover:scale-105 hover:-translate-y-1",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-        isActive && "border-primary/50 bg-primary/5 shadow-md"
-      )}
-    >
-      {/* Avatar with online dot */}
-      <div className={cn(
-        "relative rounded-full",
-        isActive && "ring-4 ring-primary ring-offset-2"
-      )}>
-        <Avatar className="size-20 border-2 border-white shadow-md">
-          {summary?.avatarUrl ? (
-            <AvatarImage src={summary.avatarUrl} alt={node.label} />
-          ) : null}
-          <AvatarFallback
-            className={cn(
-              "text-xl font-bold text-white bg-gradient-to-br",
-              avatarGradient[node.role]
-            )}
-          >
-            {node.label.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        {summary?.isOnline && (
-          <span className="absolute bottom-0.5 right-0.5 size-3.5 rounded-full bg-emerald-500 border-2 border-white" />
+    <div className="relative w-40">
+      {getDeckLayerOffsets(deckThickness).map((offset, index) => (
+        <span
+          key={`${node.id}-deck-${index}`}
+          aria-hidden
+          className="absolute inset-x-1 rounded-2xl border border-blue-200/40"
+          style={{
+            top: `${offset}px`,
+            bottom: "-6px",
+            backgroundImage:
+              "radial-gradient(circle at center, rgba(248,250,252,0.98), rgba(241,245,249,0.95) 72%), repeating-linear-gradient(45deg, rgba(30,64,175,0.14) 0px, rgba(30,64,175,0.14) 3px, transparent 3px, transparent 11px), repeating-linear-gradient(-45deg, rgba(220,38,38,0.1) 0px, rgba(220,38,38,0.1) 3px, transparent 3px, transparent 11px)",
+          }}
+        >
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-semibold text-slate-700/20">
+            {"\u2666"}
+          </span>
+        </span>
+      ))}
+
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "group relative z-10 flex w-full flex-col items-center gap-2 rounded-2xl border bg-[linear-gradient(160deg,#ffffff_0%,#f8fafc_58%,#eef2f7_100%)] p-3 shadow-sm",
+          "transition-all duration-200 hover:shadow-xl hover:scale-105 hover:-translate-y-1",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+          isActive && "border-primary/60 bg-primary/5 shadow-md"
         )}
-      </div>
+      >
+        <span className="pointer-events-none absolute right-2 top-1.5 rounded-md border border-slate-300 bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-slate-700">
+          {"КАРТА"}
+        </span>
+        <span className="pointer-events-none absolute left-2.5 top-1 text-sm font-semibold text-slate-800/35">
+          {"\u2663"}
+        </span>
 
-      {/* Name */}
-      <span className="w-full text-center text-xs font-semibold text-high-contrast leading-tight line-clamp-2">
-        {node.label}
-      </span>
+        <div
+          className={cn(
+            "relative rounded-full",
+            isActive && "ring-4 ring-primary ring-offset-2"
+          )}
+        >
+          <Avatar className="size-20 border-2 border-white shadow-md">
+            {summary?.avatarUrl ? (
+              <AvatarImage src={summary.avatarUrl} alt={node.label} />
+            ) : null}
+            <AvatarFallback
+              className={cn(
+                "text-xl font-bold text-white bg-gradient-to-br",
+                avatarGradient[node.role]
+              )}
+            >
+              {node.label.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          {summary?.isOnline && (
+            <span className="absolute bottom-0.5 right-0.5 size-3.5 rounded-full bg-emerald-500 border-2 border-white" />
+          )}
+        </div>
 
-      {/* Role badge */}
-      <span className={cn(
-        "w-full text-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border",
-        roleBadgeClass[node.role]
-      )}>
-        {roleLabel[node.role]}
-      </span>
+        <span className="w-full text-center text-xs font-semibold text-high-contrast leading-tight line-clamp-2">
+          {node.label}
+        </span>
 
-      {/* KPI chips */}
-      {summary && (
+        <span
+          className={cn(
+            "w-full text-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border",
+            roleBadgeClass[node.role]
+          )}
+        >
+          {roleLabel[node.role]}
+        </span>
+
         <div className="flex flex-wrap justify-center gap-1">
           <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">
-            {summary.leadsAdded} лид.
+            L1: {node.childrenIds.length}
           </span>
-          {node.role !== "partner" && (
+          {summary && (
             <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.5 rounded-full font-medium">
-              {summary.level1Count} парт.
+              {summary.leadsAdded}
             </span>
           )}
         </div>
-      )}
-    </button>
+      </button>
+    </div>
   )
 }
 
-// ─── Partner analytics drill-down panel ───────────────────────────────────────
 function PartnerAnalyticsPanel({
   personId,
   onBack,
