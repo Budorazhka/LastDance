@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useDashboard } from "@/context/DashboardContext"
 import { getOwnerDashboardContext } from "@/lib/mock/owner-dashboard"
 import { MailingsInbox } from "@/components/mailings/MailingsInbox"
+import { GamesBreakPanel } from "@/components/owner/SolitaireBreakPanel"
 import {
   getAnalyticsData,
   getPeriodDateRange,
@@ -585,6 +586,7 @@ export function SupremeOwnerDashboardPage() {
               </div>
             </CardContent>
           </Card>
+          <GamesBreakPanel cityId={cityId} />
         </div>
 
         <div className="flex w-full min-h-0 flex-col gap-4 self-start">
