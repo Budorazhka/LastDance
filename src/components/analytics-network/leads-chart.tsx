@@ -40,9 +40,9 @@ export function LeadsChart({ data, period, onPeriodChange }: LeadsChartProps) {
 
     return (
         <Card className="w-full">
-            <CardHeader className="px-4 pb-2 pt-3">
+            <CardHeader className="px-4 pb-2 pt-4">
                 <div className="flex flex-col items-center gap-2">
-                    <CardTitle className="text-center text-base">Динамика лидов</CardTitle>
+                    <CardTitle className="text-center text-lg font-semibold text-slate-900 sm:text-xl">Динамика лидов</CardTitle>
                     <div className="flex items-center justify-center gap-2">
                         <Tabs
                             value={period}
@@ -54,7 +54,7 @@ export function LeadsChart({ data, period, onPeriodChange }: LeadsChartProps) {
                                     <TabsTrigger
                                         key={p.value}
                                         value={p.value}
-                                        className="h-7 px-2 text-center text-sm font-normal whitespace-normal leading-tight data-[state=active]:bg-background sm:whitespace-nowrap"
+                                        className="h-8 px-3 text-center text-base font-medium whitespace-normal leading-tight data-[state=active]:bg-background sm:whitespace-nowrap"
                                     >
                                         {p.label}
                                     </TabsTrigger>
@@ -64,7 +64,7 @@ export function LeadsChart({ data, period, onPeriodChange }: LeadsChartProps) {
                     </div>
                 </div>
                 <div className="mt-1 text-center">
-                    <span className="text-2xl font-medium">{totalLeads.toLocaleString("ru-RU")}</span>
+                    <span className="text-4xl font-bold leading-none text-slate-900">{totalLeads.toLocaleString("ru-RU")}</span>
                 </div>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-2">
@@ -113,3 +113,4 @@ export function LeadsChart({ data, period, onPeriodChange }: LeadsChartProps) {
         </Card>
     );
 }
+

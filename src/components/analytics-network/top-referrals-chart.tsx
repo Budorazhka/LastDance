@@ -56,11 +56,11 @@ export function TopReferralsChart({ partners, period, onPeriodChange }: TopRefer
 
     return (
         <Card className="w-full">
-            <CardHeader className="px-4 pb-2 pt-3">
+            <CardHeader className="px-4 pb-2 pt-4">
                 <div className="flex flex-col items-center gap-3">
                     <div className="flex flex-col items-center gap-1">
-                        <CardTitle className="text-center text-sm">Топ-5 партнёров по лидам</CardTitle>
-                        <span className="text-xs text-muted-foreground">
+                        <CardTitle className="text-center text-lg font-semibold text-slate-900 sm:text-xl">Топ-5 партнёров по лидам</CardTitle>
+                        <span className="text-sm text-slate-700">
                             Всего: <span className="font-medium">{totalLeads.toLocaleString("ru-RU")}</span>
                         </span>
                     </div>
@@ -70,7 +70,7 @@ export function TopReferralsChart({ partners, period, onPeriodChange }: TopRefer
                                 <TabsTrigger
                                     key={p.value}
                                     value={p.value}
-                                    className="h-7 px-2.5 text-sm font-normal data-[state=active]:bg-background"
+                                    className="h-8 px-3 text-base font-medium data-[state=active]:bg-background"
                                 >
                                     {p.label}
                                 </TabsTrigger>
@@ -80,7 +80,7 @@ export function TopReferralsChart({ partners, period, onPeriodChange }: TopRefer
                 </div>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-2">
-                <ChartContainer config={chartConfig} className="h-[240px] w-full">
+                <ChartContainer config={chartConfig} className="h-[290px] w-full">
                     <BarChart
                         data={topPartners}
                         layout="vertical"
@@ -95,7 +95,7 @@ export function TopReferralsChart({ partners, period, onPeriodChange }: TopRefer
                             type="number"
                             tickLine={false}
                             axisLine={false}
-                            fontSize={11}
+                            tick={{ fill: "#475569", fontSize: 14, fontWeight: 500 }}
                             allowDecimals={false}
                             tickFormatter={(value) => Number(value).toFixed(0)}
                         />
@@ -104,15 +104,15 @@ export function TopReferralsChart({ partners, period, onPeriodChange }: TopRefer
                             dataKey="name"
                             tickLine={false}
                             axisLine={false}
-                            width={96}
-                            fontSize={11}
+                            width={128}
+                            tick={{ fill: "#475569", fontSize: 14, fontWeight: 500 }}
                         />
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Bar
                             dataKey="value"
                             fill="var(--color-referrals)"
                             radius={[4, 4, 4, 4]}
-                            barSize={18}
+                            barSize={22}
                         />
                     </BarChart>
                 </ChartContainer>
@@ -120,3 +120,4 @@ export function TopReferralsChart({ partners, period, onPeriodChange }: TopRefer
         </Card>
     );
 }
+

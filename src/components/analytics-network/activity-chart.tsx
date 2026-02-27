@@ -70,9 +70,9 @@ export function ActivityChart({ data, period, onPeriodChange }: ActivityChartPro
 
     return (
         <Card className="w-full">
-            <CardHeader className="px-4 pb-2 pt-3">
+            <CardHeader className="px-4 pb-2 pt-4">
                 <div className="flex flex-col gap-3">
-                    <CardTitle className="text-center text-base">Активность</CardTitle>
+                    <CardTitle className="text-center text-lg font-semibold text-slate-900 sm:text-xl">Активность</CardTitle>
                     <div className="flex justify-center">
                         <Tabs
                             value={period}
@@ -84,7 +84,7 @@ export function ActivityChart({ data, period, onPeriodChange }: ActivityChartPro
                                     <TabsTrigger
                                         key={p.value}
                                         value={p.value}
-                                        className="h-7 px-2 text-center text-sm font-normal whitespace-normal leading-tight data-[state=active]:bg-background sm:whitespace-nowrap"
+                                        className="h-8 px-3 text-center text-base font-medium whitespace-normal leading-tight data-[state=active]:bg-background sm:whitespace-nowrap"
                                     >
                                         {p.label}
                                     </TabsTrigger>
@@ -95,8 +95,8 @@ export function ActivityChart({ data, period, onPeriodChange }: ActivityChartPro
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-1">
-                            <span className="text-2xl font-medium">{totalActivity.toLocaleString("ru-RU")}</span>
-                            <span className="text-xs text-muted-foreground self-end mb-1">действий</span>
+                            <span className="text-4xl font-bold leading-none text-slate-900">{totalActivity.toLocaleString("ru-RU")}</span>
+                            <span className="mb-1 self-end text-base text-slate-700">действий</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
                             {legendItems.map((item) => {
@@ -106,7 +106,7 @@ export function ActivityChart({ data, period, onPeriodChange }: ActivityChartPro
                                         key={item.key}
                                         onClick={() => toggleSeries(item.key)}
                                         className={cn(
-                                            "flex items-center gap-1.5 transition-opacity text-xs font-medium",
+                                            "flex items-center gap-1.5 text-sm font-medium text-slate-700 transition-opacity",
                                             isActive ? "opacity-100" : "opacity-40 grayscale"
                                         )}
                                     >
@@ -179,3 +179,4 @@ export function ActivityChart({ data, period, onPeriodChange }: ActivityChartPro
         </Card>
     );
 }
+

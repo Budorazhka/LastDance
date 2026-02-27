@@ -207,8 +207,12 @@ export function ActivityCalendarCard({
         <Card className={cn(className)}>
             <CardHeader className="pb-2">
                 <div className="flex flex-col items-center gap-1 text-center">
-                    <CardTitle className={cn("text-center text-sm", highContrast && "text-base")}>Календарь активности</CardTitle>
-                    <span className={cn("text-readable-sm text-muted-high-contrast", highContrast && "text-readable-base text-foreground/80")}>{caption}</span>
+                    <CardTitle className={cn("text-center text-xl font-semibold text-slate-900 sm:text-2xl", highContrast && "text-2xl sm:text-3xl")}>
+                        Календарь активности
+                    </CardTitle>
+                    <span className={cn("text-base font-medium text-slate-700 sm:text-lg", highContrast && "text-lg text-slate-900")}>
+                        {caption}
+                    </span>
                 </div>
             </CardHeader>
             <CardContent className="space-y-3 px-2 pt-1 sm:px-6">

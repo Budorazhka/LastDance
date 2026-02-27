@@ -279,13 +279,13 @@ export function PersonalAnalyticsInsights({
                 <CardHeader className="pb-2">
                     <div className="space-y-2">
                         <div className="space-y-1 text-center">
-                            <CardTitle className="text-lg font-medium sm:text-xl">{"\u041f\u043b\u0430\u043d/\u0444\u0430\u043a\u0442"}</CardTitle>
-                            <p className="text-sm text-muted-foreground">
+                            <CardTitle className="text-2xl font-semibold text-slate-900 sm:text-3xl">{"\u041f\u043b\u0430\u043d/\u0444\u0430\u043a\u0442"}</CardTitle>
+                            <p className="text-base text-slate-700">
                                 {activePlanBucket === "week" ? "\u041f\u043b\u0430\u043d \u043d\u0430 \u043d\u0435\u0434\u0435\u043b\u044e" : "\u041f\u043b\u0430\u043d \u043d\u0430 \u043c\u0435\u0441\u044f\u0446"}
                             </p>
                         </div>
                         <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-                            <span className="rounded-md border bg-muted/30 px-2.5 py-1 text-sm font-medium">
+                            <span className="rounded-md border bg-muted/30 px-2.5 py-1 text-lg font-semibold text-slate-900">
                                 {overallProgressPercent}%
                             </span>
                             {allowPlanEditing && (
@@ -305,14 +305,14 @@ export function PersonalAnalyticsInsights({
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="flex flex-1 flex-col gap-4 pt-1">
+                <CardContent className="flex flex-1 flex-col justify-between gap-4 pt-1">
                     <div className="grid gap-3 sm:grid-cols-3">
                         {planRows.map((row) => {
                             const progressWidth = Math.min(Math.max(row.percent, 0), 140);
                             return (
                                 <div key={row.key} className="rounded-md border bg-muted/20 p-3">
-                                    <p className="text-[13px] text-muted-foreground">{row.label}</p>
-                                    <p className="mt-1 break-words text-lg font-medium">
+                                    <p className="text-sm font-medium text-slate-700">{row.label}</p>
+                                    <p className="mt-1 break-words text-3xl font-bold leading-none text-slate-900">
                                         {row.fact.toLocaleString("ru-RU")} / {row.plan.toLocaleString("ru-RU")}
                                     </p>
                                     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -321,7 +321,7 @@ export function PersonalAnalyticsInsights({
                                             style={{ width: `${progressWidth}%` }}
                                         />
                                     </div>
-                                    <p className="mt-1 text-sm text-muted-foreground">{row.percent}%</p>
+                                    <p className="mt-1 text-base font-medium text-slate-700">{row.percent}%</p>
                                 </div>
                             );
                         })}
@@ -329,30 +329,30 @@ export function PersonalAnalyticsInsights({
 
                     <div className="grid gap-3 sm:grid-cols-3">
                         <div className="rounded-md border bg-muted/20 px-3 py-2.5">
-                            <p className="text-[13px] text-muted-foreground">Выполнено метрик</p>
-                            <p className="text-lg font-medium tabular-nums">
+                            <p className="text-sm font-medium text-slate-700">Выполнено метрик</p>
+                            <p className="text-3xl font-bold leading-none text-slate-900 tabular-nums">
                                 {completedMetricsCount}/{planRows.length}
                             </p>
                         </div>
                         <div className="rounded-md border bg-muted/20 px-3 py-2.5">
-                            <p className="text-[13px] text-muted-foreground">Осталось до плана</p>
-                            <p className="text-lg font-medium tabular-nums">{totalRemaining.toLocaleString("ru-RU")}</p>
+                            <p className="text-sm font-medium text-slate-700">Осталось до плана</p>
+                            <p className="text-3xl font-bold leading-none text-slate-900 tabular-nums">{totalRemaining.toLocaleString("ru-RU")}</p>
                         </div>
                         <div className="rounded-md border bg-muted/20 px-3 py-2.5">
-                            <p className="text-[13px] text-muted-foreground">Сверх плана</p>
-                            <p className="text-lg font-medium tabular-nums">{totalSurplus.toLocaleString("ru-RU")}</p>
+                            <p className="text-sm font-medium text-slate-700">Сверх плана</p>
+                            <p className="text-3xl font-bold leading-none text-slate-900 tabular-nums">{totalSurplus.toLocaleString("ru-RU")}</p>
                         </div>
                     </div>
 
                     <div className="space-y-2 rounded-md border bg-muted/15 px-3 py-3">
-                        <p className="text-sm text-muted-foreground">Что добрать до плана</p>
+                        <p className="text-base font-medium text-slate-700">Что добрать до плана</p>
                         {planGapRows.map((row) => (
-                            <div key={`${row.key}-gap`} className="flex items-center justify-between gap-2 text-sm">
-                                <span className="min-w-0 text-muted-foreground">{row.label}</span>
+                            <div key={`${row.key}-gap`} className="flex items-center justify-between gap-2 text-base">
+                                <span className="min-w-0 text-slate-700">{row.label}</span>
                                 {row.remaining > 0 ? (
-                                    <span className="font-medium text-amber-600">+{row.remaining.toLocaleString("ru-RU")}</span>
+                                    <span className="font-semibold text-amber-700">+{row.remaining.toLocaleString("ru-RU")}</span>
                                 ) : (
-                                    <span className="font-medium text-emerald-600">выполнено</span>
+                                    <span className="font-semibold text-emerald-700">выполнено</span>
                                 )}
                             </div>
                         ))}

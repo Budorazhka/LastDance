@@ -675,8 +675,8 @@ export function SupremeOwnerDashboardPage() {
 
       <div className="space-y-3">
         <div className="text-center">
-          <p className="text-readable-base font-medium text-high-contrast">Активность партнеров</p>
-          <p className="text-readable-sm text-muted-high-contrast">
+          <p className="text-xl font-semibold text-slate-900 sm:text-2xl">Активность партнеров</p>
+          <p className="text-base text-slate-700">
             Топ по лидам и распределение по активности за выбранный период.
           </p>
         </div>

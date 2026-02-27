@@ -20,7 +20,7 @@ interface CabinetSwitcherProps {
 
 const roleMeta: Record<CabinetRole, { label: string; className: string }> = {
   supreme_owner: {
-    label: "Supreme Owner",
+    label: "Хозяин сети",
     className:
       "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   },
@@ -75,4 +75,3 @@ export function CabinetSwitcher({
     </div>
   )
 }
-

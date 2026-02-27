@@ -101,11 +101,11 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
 
     return (
         <Card className="w-full">
-            <CardHeader className="px-2 pb-2 pt-3 sm:px-4">
+            <CardHeader className="px-3 pb-2 pt-4 sm:px-4">
                 <div className="flex flex-col items-center gap-3">
                     <div className="flex flex-col items-center gap-1">
                         <div className="flex items-center justify-center gap-1.5">
-                            <CardTitle className="text-center text-xs sm:text-sm">Распределение активности партнёров</CardTitle>
+                            <CardTitle className="text-center text-base font-semibold text-slate-900 sm:text-lg">Распределение активности партнёров</CardTitle>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <button
@@ -113,7 +113,7 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
                                         className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground/70 hover:text-muted-foreground hover:bg-accent transition-colors"
                                         aria-label="Как считается активность"
                                     >
-                                        <HelpCircle className="h-3.5 w-3.5" />
+                                        <HelpCircle className="h-4 w-4" />
                                     </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-[280px]">
@@ -125,7 +125,7 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
                                 </TooltipContent>
                             </Tooltip>
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-sm text-slate-700">
                             Всего: <span className="font-medium">{totalPartners.toLocaleString("ru-RU")}</span>
                         </span>
                     </div>
@@ -135,7 +135,7 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
                                 <TabsTrigger
                                     key={p.value}
                                     value={p.value}
-                                    className="h-7 px-2 text-xs font-normal data-[state=active]:bg-background sm:px-2.5 sm:text-sm"
+                                    className="h-8 px-3 text-sm font-medium data-[state=active]:bg-background sm:text-base"
                                 >
                                     {p.label}
                                 </TabsTrigger>
@@ -144,8 +144,8 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
                     </Tabs>
                 </div>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4 px-2 pb-4 pt-2 sm:flex-row sm:items-center sm:gap-6 sm:px-4">
-                <ChartContainer config={chartConfig} className="mx-auto aspect-square w-full max-w-[220px] shrink-0 sm:mx-0 sm:max-w-[240px]">
+            <CardContent className="flex flex-col gap-4 px-3 pb-4 pt-2 sm:flex-row sm:items-center sm:gap-6 sm:px-4">
+                <ChartContainer config={chartConfig} className="mx-auto aspect-square w-full max-w-[260px] shrink-0 sm:mx-0 sm:max-w-[280px]">
                     <PieChart>
                         <ChartTooltip content={<ChartTooltipContent />} />
                         <Pie
@@ -183,14 +183,14 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
                                                 <tspan
                                                     x={viewBox.cx}
                                                     y={viewBox.cy}
-                                                    className="fill-foreground text-xl font-medium sm:text-2xl"
+                                                    className="fill-slate-900 text-3xl font-semibold sm:text-4xl"
                                                 >
                                                     {centerPercent}%
                                                 </tspan>
                                                 <tspan
                                                     x={viewBox.cx}
-                                                    y={(viewBox.cy || 0) + 16}
-                                                    className="fill-muted-foreground text-[10px] sm:text-xs"
+                                                    y={(viewBox.cy || 0) + 20}
+                                                    className="fill-slate-700 text-xs font-medium sm:text-sm"
                                                 >
                                                     {centerLabel}
                                                 </tspan>
@@ -211,7 +211,7 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
                                 <div
                                     key={item.key}
                                     className={cn(
-                                        "flex items-center gap-2 rounded-md px-2 py-1 text-xs cursor-pointer transition-all",
+                                        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm cursor-pointer transition-all",
                                         isSelected
                                             ? "bg-accent/60 font-medium"
                                             : highlightedSegment
@@ -223,19 +223,19 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
                                         onSegmentClick?.(item.key as ActivityMarker);
                                     }}
                                 >
-                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                                    <span className={isSelected ? "text-foreground" : "text-muted-foreground"}>{item.label}</span>
-                                    <span className="ml-auto font-medium">{percent}%</span>
+                                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                                    <span className={isSelected ? "text-slate-900 font-medium" : "text-slate-700"}>{item.label}</span>
+                                    <span className="ml-auto text-base font-semibold text-slate-900">{percent}%</span>
                                 </div>
                             );
                         })}
                     </div>
-                    <div className="rounded-lg border bg-muted/30 p-2.5 sm:p-3">
+                    <div className="rounded-lg border bg-muted/30 p-3 sm:p-3.5">
                         <div className="flex items-center justify-between gap-1.5">
-                            <p className="text-[11px] font-medium sm:text-xs">Партнёры в зоне риска</p>
-                            <span className="text-[11px] font-medium sm:text-xs">{riskCount.toLocaleString("ru-RU")} ({riskPercent}%)</span>
+                            <p className="text-sm font-semibold text-slate-900">Партнёры в зоне риска</p>
+                            <span className="text-sm font-semibold text-slate-900">{riskCount.toLocaleString("ru-RU")} ({riskPercent}%)</span>
                         </div>
-                        <p className="mt-1 text-[10px] text-muted-foreground sm:text-[11px]">
+                        <p className="mt-1 text-sm text-slate-700">
                             {period === "week"
                                 ? "В зоне риска: партнёры с 0 активных дней за последние 7 дней."
                                 : "В зоне риска: все пассивные партнёры за выбранный период."}
@@ -243,7 +243,7 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
                         {riskPreview.length > 0 && (
                             <div className="mt-2 space-y-1">
                                 {riskPreview.map((partner) => (
-                                    <p key={partner.id} className="truncate text-[11px] text-muted-foreground">
+                                    <p key={partner.id} className="truncate text-sm text-slate-700">
                                         {partner.name}
                                     </p>
                                 ))}
@@ -255,3 +255,4 @@ export function PartnersActivityDistribution({ partners, period, onPeriodChange,
         </Card>
     );
 }
+

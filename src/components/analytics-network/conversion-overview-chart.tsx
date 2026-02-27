@@ -36,7 +36,7 @@ type ConversionItem = {
 
 function ConversionAxisTick({ x = 0, y = 0, payload }: ConversionAxisTickProps) {
     return (
-        <text x={Number(x) - 4} y={Number(y) + 4} textAnchor="end" className="fill-muted-foreground text-[11px]">
+        <text x={Number(x) - 4} y={Number(y) + 5} textAnchor="end" className="fill-slate-700 text-[14px] font-medium">
             {payload?.value ?? ""}
         </text>
     );
@@ -101,15 +101,15 @@ export function ConversionOverviewChart({ funnel, className }: ConversionOvervie
 
     return (
         <Card className={cn(className)}>
-            <CardHeader className="px-2 pb-2 sm:px-6">
-                <CardTitle className="text-center text-sm font-medium sm:text-lg">Конверсии</CardTitle>
-                <p className="text-center text-[11px] text-muted-foreground sm:text-xs">
+            <CardHeader className="px-3 pb-2 sm:px-6">
+                <CardTitle className="text-center text-xl font-semibold text-slate-900 sm:text-3xl">Конверсии</CardTitle>
+                <p className="text-center text-sm font-medium text-slate-700 sm:text-base">
                     Процент лидов, перешедших на следующий шаг воронки.
                 </p>
             </CardHeader>
-            <CardContent className="space-y-4 px-1 pt-1 sm:px-6">
-                <div className="overflow-hidden origin-top [transform:scale(0.82)] -mb-[54px] sm:[transform:none] sm:mb-0">
-                    <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <CardContent className="space-y-4 px-2 pt-1 sm:px-6">
+                <div className="overflow-hidden">
+                    <ChartContainer config={chartConfig} className="h-[360px] w-full">
                         <BarChart data={data} layout="vertical" margin={{ top: 8, right: 24, left: 12, bottom: 8 }}>
                             <CartesianGrid horizontal={true} vertical={false} strokeDasharray="3 3" />
                             <XAxis
@@ -118,7 +118,7 @@ export function ConversionOverviewChart({ funnel, className }: ConversionOvervie
                                 tickLine={false}
                                 axisLine={false}
                                 tickFormatter={(value) => `${value}%`}
-                                fontSize={10}
+                                tick={{ fill: "#475569", fontSize: 13, fontWeight: 500 }}
                             />
                             <YAxis
                                 type="category"
@@ -154,7 +154,7 @@ export function ConversionOverviewChart({ funnel, className }: ConversionOvervie
                                     dataKey="value"
                                     position="right"
                                     formatter={(value) => `${value ?? 0}%`}
-                                    className="fill-foreground text-[11px]"
+                                    className="fill-slate-900 text-[16px] font-semibold"
                                 />
                                 {data.map((item) => (
                                     <Cell key={item.key} fill={item.color} />
@@ -164,17 +164,17 @@ export function ConversionOverviewChart({ funnel, className }: ConversionOvervie
                     </ChartContainer>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                <div className="mt-4 grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
                     {data.map((item) => (
-                        <div key={item.key} className="rounded-md border bg-muted/20 px-2.5 py-1.5 sm:px-3 sm:py-2">
+                        <div key={item.key} className="rounded-lg border bg-muted/20 px-3 py-2.5 sm:px-3.5 sm:py-3">
                             <div className="flex items-center justify-between gap-1.5">
                                 <div className="flex min-w-0 items-center gap-1.5">
-                                    <span className="h-2 w-2 shrink-0 rounded-full sm:h-2.5 sm:w-2.5" style={{ backgroundColor: item.color }} />
-                                    <span className="truncate text-[11px] text-muted-foreground sm:text-xs">{item.label}</span>
+                                    <span className="h-2.5 w-2.5 shrink-0 rounded-full sm:h-3 sm:w-3" style={{ backgroundColor: item.color }} />
+                                    <span className="text-base font-medium text-slate-700 break-words">{item.label}</span>
                                 </div>
-                                <span className="text-[11px] font-medium tabular-nums sm:text-xs">{item.value}%</span>
+                                <span className="text-2xl font-bold leading-none text-slate-900 tabular-nums">{item.value}%</span>
                             </div>
-                            <p className="mt-0.5 truncate text-[10px] text-muted-foreground sm:mt-1 sm:text-[11px]">{item.description}</p>
+                            <p className="mt-1 text-sm leading-snug text-slate-700">{item.description}</p>
                         </div>
                     ))}
                 </div>

@@ -64,7 +64,7 @@ export function PartnerAnalyticsPage() {
   const channelMax = Math.max(...channelStats.map((item) => item.value), 1)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[15px] leading-relaxed text-slate-900 sm:text-base">
       <Header
         title={`Аналитика партнера ${partner.name}`}
         breadcrumbs={[
@@ -87,7 +87,7 @@ export function PartnerAnalyticsPage() {
               type="button"
               onClick={() => setPeriod(item.value)}
               className={
-                'rounded-full px-3 py-1.5 text-sm transition-colors ' +
+                'rounded-full px-3 py-1.5 text-base font-semibold transition-colors ' +
                 (item.value === period
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')
@@ -100,10 +100,12 @@ export function PartnerAnalyticsPage() {
       </div>
 
       <Card>
-        <CardContent className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold">{partner.name}</h2>
+        <CardContent className="flex min-w-0 flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="max-w-full break-words text-[clamp(1.25rem,3vw,1.75rem)] font-semibold leading-tight">
+                {partner.name}
+              </h2>
               {partner.type === 'master' && <Crown className="size-5 text-amber-500" />}
               {partner.type === 'master' && (
                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
@@ -111,29 +113,33 @@ export function PartnerAnalyticsPage() {
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{partner.login}</p>
+            <p className="break-all text-base text-slate-700 sm:break-words">{partner.login}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {partner.roles.map((role) => (
                 <RoleBadge key={role} role={role} />
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm md:min-w-[340px]">
+          <div className="grid grid-cols-2 gap-3 text-base md:min-w-[340px]">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs text-muted-foreground">Время в системе</p>
-              <p className="font-semibold">{formatCrmTime(partner.crmMinutes)}</p>
+              <p className="text-sm font-medium text-slate-700">Время в системе</p>
+              <p className="text-lg font-semibold text-slate-900 tabular-nums">{formatCrmTime(partner.crmMinutes)}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs text-muted-foreground">Активность</p>
-              <p className="font-semibold">{row?.activityTotal?.toLocaleString('ru-RU') ?? 0}</p>
+              <p className="text-sm font-medium text-slate-700">Активность</p>
+              <p className="text-lg font-semibold text-slate-900 tabular-nums">
+                {row?.activityTotal?.toLocaleString('ru-RU') ?? 0}
+              </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs text-muted-foreground">Сделки</p>
-              <p className="font-semibold">{row?.deals?.toLocaleString('ru-RU') ?? 0}</p>
+              <p className="text-sm font-medium text-slate-700">Сделки</p>
+              <p className="text-lg font-semibold text-slate-900 tabular-nums">{row?.deals?.toLocaleString('ru-RU') ?? 0}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs text-muted-foreground">Комиссия</p>
-              <p className="font-semibold">${row?.commissionUsd?.toLocaleString('ru-RU') ?? 0}</p>
+              <p className="text-sm font-medium text-slate-700">Комиссия</p>
+              <p className="text-lg font-semibold text-slate-900 tabular-nums">
+                ${row?.commissionUsd?.toLocaleString('ru-RU') ?? 0}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -147,8 +153,10 @@ export function PartnerAnalyticsPage() {
                 <BarChart3 className="size-5" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Лиды</p>
-                <p className="text-xl font-semibold">{row?.leadsAdded?.toLocaleString('ru-RU') ?? 0}</p>
+                <p className="text-base font-medium text-slate-700">Лиды</p>
+                <p className="text-2xl font-semibold leading-tight text-slate-900 tabular-nums">
+                  {row?.leadsAdded?.toLocaleString('ru-RU') ?? 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -161,8 +169,10 @@ export function PartnerAnalyticsPage() {
                 <Handshake className="size-5" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Конверсия лид → сделка</p>
-                <p className="text-xl font-semibold">{conversions?.leadToDeal ?? 0}%</p>
+                <p className="text-base font-medium text-slate-700">Конверсия лид → сделка</p>
+                <p className="text-2xl font-semibold leading-tight text-slate-900 tabular-nums">
+                  {conversions?.leadToDeal ?? 0}%
+                </p>
               </div>
             </div>
           </CardContent>
@@ -175,8 +185,8 @@ export function PartnerAnalyticsPage() {
                 <Clock3 className="size-5" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Онлайн за 7 дней</p>
-                <p className="text-xl font-semibold">{row?.onlineDaysLast7 ?? 0} дней</p>
+                <p className="text-base font-medium text-slate-700">Онлайн за 7 дней</p>
+                <p className="text-2xl font-semibold leading-tight text-slate-900 tabular-nums">{row?.onlineDaysLast7 ?? 0} дней</p>
               </div>
             </div>
           </CardContent>
@@ -189,8 +199,10 @@ export function PartnerAnalyticsPage() {
                 <Wallet className="size-5" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Комиссия</p>
-                <p className="text-xl font-semibold">${row?.commissionUsd?.toLocaleString('ru-RU') ?? 0}</p>
+                <p className="text-base font-medium text-slate-700">Комиссия</p>
+                <p className="text-2xl font-semibold leading-tight text-slate-900 tabular-nums">
+                  ${row?.commissionUsd?.toLocaleString('ru-RU') ?? 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -200,8 +212,8 @@ export function PartnerAnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader className="space-y-1">
-            <CardTitle>Динамика лидов партнера</CardTitle>
-            <CardDescription>Период: {analytics.periodLabel}</CardDescription>
+            <CardTitle className="text-xl text-slate-900">Динамика лидов партнера</CardTitle>
+            <CardDescription className="text-sm text-slate-700">Период: {analytics.periodLabel}</CardDescription>
           </CardHeader>
           <CardContent>
             <div
@@ -221,7 +233,7 @@ export function PartnerAnalyticsPage() {
                         title={`${point?.label}: ${point?.leads}`}
                       />
                     </div>
-                    <span className="truncate text-[10px] text-muted-foreground">
+                    <span className="truncate text-xs text-slate-600">
                       {shouldShowLabel ? point?.label : '·'}
                     </span>
                   </div>
@@ -233,18 +245,20 @@ export function PartnerAnalyticsPage() {
 
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle>Текущая активность</CardTitle>
-            <CardDescription>{row.isOnline ? 'Сейчас в сети' : 'Сейчас офлайн'}</CardDescription>
+            <CardTitle className="text-xl text-slate-900">Текущая активность</CardTitle>
+            <CardDescription className="text-sm text-slate-700">
+              {row.isOnline ? 'Сейчас в сети' : 'Сейчас офлайн'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {channelStats.map((item) => (
               <div key={item.label} className="space-y-1.5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <div className="flex items-center justify-between text-base">
+                  <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
                     <item.icon className="size-3.5" />
                     {item.label}
                   </span>
-                  <span className="font-medium text-foreground">{item.value.toLocaleString('ru-RU')}</span>
+                  <span className="font-semibold text-slate-900 tabular-nums">{item.value.toLocaleString('ru-RU')}</span>
                 </div>
                 <div className="h-2 rounded-full bg-slate-100">
                   <div
@@ -255,7 +269,7 @@ export function PartnerAnalyticsPage() {
               </div>
             ))}
             <div>
-              <p className="mb-2 text-xs text-muted-foreground">Онлайн-метка за неделю</p>
+              <p className="mb-2 text-sm font-medium text-slate-700">Онлайн-метка за неделю</p>
               <div className="flex items-center gap-1.5">
                 {row?.onlineWeekMarkers?.map((marker, markerIndex) => (
                   <span key={markerIndex} className={`size-2.5 rounded-full ${MARKER_COLORS[marker]}`} />
@@ -268,28 +282,36 @@ export function PartnerAnalyticsPage() {
 
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle>Воронка партнера</CardTitle>
-          <CardDescription>От лида до сделки</CardDescription>
+          <CardTitle className="text-xl text-slate-900">Воронка партнера</CardTitle>
+          <CardDescription className="text-sm text-slate-700">От лида до сделки</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs text-muted-foreground">Новые лиды</p>
-            <p className="text-xl font-semibold">{funnel?.newLeads?.toLocaleString('ru-RU') ?? 0}</p>
+            <p className="text-sm font-medium text-slate-700">Новые лиды</p>
+            <p className="text-2xl font-semibold leading-tight text-slate-900 tabular-nums">
+              {funnel?.newLeads?.toLocaleString('ru-RU') ?? 0}
+            </p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs text-muted-foreground">Презентации</p>
-            <p className="text-xl font-semibold">{funnel?.presentations?.toLocaleString('ru-RU') ?? 0}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Конверсия: {conversions?.leadToPresentation ?? 0}%</p>
+            <p className="text-sm font-medium text-slate-700">Презентации</p>
+            <p className="text-2xl font-semibold leading-tight text-slate-900 tabular-nums">
+              {funnel?.presentations?.toLocaleString('ru-RU') ?? 0}
+            </p>
+            <p className="mt-1 text-sm text-slate-700">Конверсия: {conversions?.leadToPresentation ?? 0}%</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs text-muted-foreground">Показы</p>
-            <p className="text-xl font-semibold">{funnel?.showings?.toLocaleString('ru-RU') ?? 0}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Конверсия: {conversions?.presentationToShowing ?? 0}%</p>
+            <p className="text-sm font-medium text-slate-700">Показы</p>
+            <p className="text-2xl font-semibold leading-tight text-slate-900 tabular-nums">
+              {funnel?.showings?.toLocaleString('ru-RU') ?? 0}
+            </p>
+            <p className="mt-1 text-sm text-slate-700">Конверсия: {conversions?.presentationToShowing ?? 0}%</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs text-muted-foreground">Сделки</p>
-            <p className="text-xl font-semibold">{funnel?.deals?.toLocaleString('ru-RU') ?? 0}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Конверсия: {conversions?.showingToDeal ?? 0}%</p>
+            <p className="text-sm font-medium text-slate-700">Сделки</p>
+            <p className="text-2xl font-semibold leading-tight text-slate-900 tabular-nums">
+              {funnel?.deals?.toLocaleString('ru-RU') ?? 0}
+            </p>
+            <p className="mt-1 text-sm text-slate-700">Конверсия: {conversions?.showingToDeal ?? 0}%</p>
           </div>
         </CardContent>
       </Card>

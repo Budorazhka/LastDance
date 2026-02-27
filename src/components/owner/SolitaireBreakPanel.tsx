@@ -395,6 +395,12 @@ export function GamesBreakPanel({ cityId }: GamesBreakPanelProps) {
   const [snakeState, setSnakeState] = useState<SnakeState>(() => createInitialSnakeState())
   const [tetrisState, setTetrisState] = useState<TetrisState>(() => createInitialTetrisState())
 
+  useEffect(() => {
+    if (selectedGame === "snake") {
+      setSelectedGame("management")
+    }
+  }, [selectedGame])
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const keysRef = useRef<Record<string, boolean>>({})
   const lastTickRef = useRef<number | null>(null)
@@ -416,16 +422,7 @@ export function GamesBreakPanel({ cityId }: GamesBreakPanelProps) {
   const sleepIconSrc = useMemo(() => `${import.meta.env.BASE_URL}sleep.png`, [])
 
   const managementReminder = managementState.elapsedSeconds >= WORK_REMINDER_SECONDS
-  const snakeReminder = snakeState.elapsedSeconds >= WORK_REMINDER_SECONDS
   const tetrisReminder = tetrisState.elapsedSeconds >= WORK_REMINDER_SECONDS
-
-  const snakeHead = snakeState.snake[0]
-  const snakeHeadKey = snakeHead ? `${snakeHead.x}:${snakeHead.y}` : ""
-  const snakeBodySet = useMemo(
-    () => new Set(snakeState.snake.slice(1).map((part) => `${part.x}:${part.y}`)),
-    [snakeState.snake]
-  )
-  const snakeFoodKey = `${snakeState.food.x}:${snakeState.food.y}`
 
   const tetrisPreviewSet = useMemo(() => {
     const set = new Set<string>()
@@ -451,10 +448,6 @@ export function GamesBreakPanel({ cityId }: GamesBreakPanelProps) {
     keysRef.current = {}
     lastTickRef.current = null
     actionCooldownRef.current = 0
-  }
-
-  const restartSnake = () => {
-    setSnakeState((current) => createInitialSnakeState(current.bestScore))
   }
 
   const restartTetris = () => {
@@ -926,8 +919,8 @@ export function GamesBreakPanel({ cityId }: GamesBreakPanelProps) {
       </Card>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-[2px] sm:p-5">
-          <div className="flex h-[min(94vh,920px)] w-[min(98vw,1400px)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
+        <div className="fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-[2px]">
+          <div className="flex h-full w-full flex-col overflow-hidden border border-slate-700 bg-slate-950">
             <header className="flex items-start justify-between gap-3 border-b border-slate-700 px-4 py-3 sm:items-center sm:px-5">
               <div className="min-w-0">
                 <h2 className="text-readable-lg font-semibold text-white">Игровая зона</h2>
@@ -964,27 +957,6 @@ export function GamesBreakPanel({ cityId }: GamesBreakPanelProps) {
                       <div>
                         <p className="text-readable-sm font-semibold text-white">Менеджмент</p>
                         <p className="text-readable-xs text-slate-300">Разбудите спящих и наберите очки.</p>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedGame("snake")}
-                    className={cn(
-                      "w-full rounded-xl border p-3 text-left transition",
-                      selectedGame === "snake"
-                        ? "border-cyan-400/70 bg-cyan-500/15"
-                        : "border-slate-700 bg-slate-900 hover:bg-slate-800"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-12 place-items-center rounded-lg border border-slate-600 bg-slate-800 text-2xl text-emerald-300">
-                        S
-                      </div>
-                      <div>
-                        <p className="text-readable-sm font-semibold text-white">Змейка</p>
-                        <p className="text-readable-xs text-slate-300">Собирайте еду и растите длину.</p>
                       </div>
                     </div>
                   </button>
@@ -1083,83 +1055,6 @@ export function GamesBreakPanel({ cityId }: GamesBreakPanelProps) {
                     </div>
 
                     {managementReminder ? (
-                      <div className="rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-2 text-amber-100">
-                        5 минут прошло. Пора за работу.
-                      </div>
-                    ) : null}
-                  </section>
-                ) : selectedGame === "snake" ? (
-                  <section className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      <div className="rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2">
-                        <p className="text-readable-xs text-slate-300">Счет</p>
-                        <p className="text-readable-lg font-semibold text-white">{snakeState.score}</p>
-                      </div>
-                      <div className="rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2">
-                        <p className="text-readable-xs text-slate-300">Лучший</p>
-                        <p className="text-readable-lg font-semibold text-white">{snakeState.bestScore}</p>
-                      </div>
-                      <div className="rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2">
-                        <p className="text-readable-xs text-slate-300">Длина</p>
-                        <p className="text-readable-lg font-semibold text-white">{snakeState.snake.length}</p>
-                      </div>
-                      <div className="rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2">
-                        <p className="inline-flex items-center gap-1 text-readable-xs text-slate-300">
-                          <Clock3 className="size-3.5" />
-                          Время
-                        </p>
-                        <p className="text-readable-lg font-semibold text-white">
-                          {formatTimer(snakeState.elapsedSeconds)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-700 bg-slate-900 p-2 sm:p-3">
-                      <div
-                        className="grid gap-[2px] rounded-lg bg-slate-950 p-[2px]"
-                        style={{ gridTemplateColumns: `repeat(${SNAKE_COLS}, minmax(0, 1fr))` }}
-                      >
-                        {Array.from({ length: SNAKE_COLS * SNAKE_ROWS }, (_, index) => {
-                          const x = index % SNAKE_COLS
-                          const y = Math.floor(index / SNAKE_COLS)
-                          const key = `${x}:${y}`
-                          const isHead = key === snakeHeadKey
-                          const isBody = snakeBodySet.has(key)
-                          const isFood = key === snakeFoodKey
-                          return (
-                            <div
-                              key={key}
-                              className={cn(
-                                "aspect-square rounded-[3px]",
-                                isHead
-                                  ? "bg-emerald-300"
-                                  : isBody
-                                    ? "bg-emerald-500/85"
-                                    : isFood
-                                      ? "bg-rose-400"
-                                      : "bg-slate-800"
-                              )}
-                            />
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button type="button" className="bg-cyan-600 text-white hover:bg-cyan-500" onClick={restartSnake}>
-                        <RotateCcw className="mr-2 size-4" />
-                        Начать заново
-                      </Button>
-                      <p className="text-readable-xs text-slate-300">Управление: `WASD` или стрелки.</p>
-                    </div>
-
-                    {snakeState.isGameOver ? (
-                      <div className="rounded-xl border border-rose-400/40 bg-rose-500/15 px-3 py-2 text-rose-100">
-                        Игра окончена. Нажмите «Начать заново».
-                      </div>
-                    ) : null}
-
-                    {snakeReminder ? (
                       <div className="rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-2 text-amber-100">
                         5 минут прошло. Пора за работу.
                       </div>

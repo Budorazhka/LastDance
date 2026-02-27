@@ -59,14 +59,16 @@ export function StaticKpiCards({ data, referralsLabel = "Рефералы L1", s
                 const value = kpi.key === "totalListings" && secondMetric ? secondMetric.value : data[kpi.key];
 
                 return (
-                    <Card key={kpi.key} className="p-3">
-                        <CardContent className="p-0 flex flex-col items-center gap-2 text-center">
-                            <div className={`p-2 rounded-lg ${kpi.iconBg}`}>
-                                <Icon className={`h-4 w-4 ${kpi.iconColor}`} />
+                    <Card key={kpi.key} className="p-4">
+                        <CardContent className="flex min-h-[120px] flex-col items-center justify-center gap-2.5 p-0 text-center">
+                            <div className={`rounded-lg p-2.5 ${kpi.iconBg}`}>
+                                <Icon className={`h-5 w-5 ${kpi.iconColor}`} />
                             </div>
                             <div className="min-w-0">
-                                <p className="truncate text-xs text-muted-foreground">{kpi.label}</p>
-                                <p className="text-lg font-medium">{value.toLocaleString("ru-RU")}</p>
+                                <p className="text-base font-medium leading-snug text-slate-700 break-words">{kpi.label}</p>
+                                <p className="text-[34px] font-bold leading-none text-slate-900 tabular-nums">
+                                    {value.toLocaleString("ru-RU")}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>

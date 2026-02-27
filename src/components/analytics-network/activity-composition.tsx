@@ -115,12 +115,12 @@ export function ActivityComposition({ data, className }: ActivityCompositionProp
 
     return (
         <Card className={cn(className)}>
-            <CardHeader className="px-2 pb-2 pt-3 sm:px-4">
-                <CardTitle className="text-center text-sm">Состав активности</CardTitle>
+            <CardHeader className="px-3 pb-2 pt-4 sm:px-4">
+                <CardTitle className="text-center text-base font-semibold text-slate-900 sm:text-lg">Состав активности</CardTitle>
             </CardHeader>
-            <CardContent className="px-2 pb-4 pt-1 sm:px-4">
+            <CardContent className="px-3 pb-4 pt-2 sm:px-4">
                 <div className="flex flex-col items-center gap-4 lg:flex-row lg:justify-center">
-                    <ChartContainer config={chartConfig} className="mx-auto aspect-square w-full max-w-[260px] shrink-0 sm:max-w-[280px]">
+                    <ChartContainer config={chartConfig} className="mx-auto aspect-square w-full max-w-[300px] shrink-0 sm:max-w-[340px]">
                         <PieChart>
                             <ChartTooltip content={<ChartTooltipContent />} />
                             <Pie
@@ -139,13 +139,13 @@ export function ActivityComposition({ data, className }: ActivityCompositionProp
                             </Pie>
                         </PieChart>
                     </ChartContainer>
-                    <div className="flex min-w-0 flex-row items-center justify-center gap-2 lg:flex-col lg:items-end">
+                    <div className="flex min-w-0 flex-row items-center justify-center gap-2.5 lg:flex-col lg:items-end">
                         {items.map((item) => {
                             const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
                             const channel = channelMeta[item.key];
                             return (
-                                <div key={item.key} className="w-[4.5rem] rounded-md border bg-muted/20 py-1.5 sm:w-20">
-                                    <div className="flex flex-col items-center gap-1 text-xs font-medium tabular-nums sm:text-sm">
+                                <div key={item.key} className="w-[5.25rem] rounded-md border bg-muted/20 py-2 sm:w-24">
+                                    <div className="flex flex-col items-center gap-1.5 text-sm font-semibold text-slate-900 tabular-nums sm:text-base">
                                             <ChannelIconHint
                                                 icon={channel.Icon}
                                                 iconColor={channel.iconColor}
@@ -161,17 +161,17 @@ export function ActivityComposition({ data, className }: ActivityCompositionProp
                     </div>
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-md border bg-muted/20 px-2 py-1.5 sm:px-3 sm:py-2">
-                        <p className="text-[11px] text-muted-foreground sm:text-xs">
+                    <div className="rounded-md border bg-muted/20 px-2.5 py-2 sm:px-3 sm:py-2.5">
+                        <p className="text-xs font-medium text-slate-700 sm:text-sm">
                             <MetricHintLabel label="Всего активностей" hint={hints.total} />
                         </p>
-                        <p className="text-sm font-medium tabular-nums sm:text-base">{total.toLocaleString("ru-RU")}</p>
+                        <p className="text-lg font-semibold text-slate-900 tabular-nums sm:text-xl">{total.toLocaleString("ru-RU")}</p>
                     </div>
-                    <div className="rounded-md border bg-muted/20 px-2 py-1.5 sm:px-3 sm:py-2">
-                        <p className="text-[11px] text-muted-foreground sm:text-xs">
+                    <div className="rounded-md border bg-muted/20 px-2.5 py-2 sm:px-3 sm:py-2.5">
+                        <p className="text-xs font-medium text-slate-700 sm:text-sm">
                             <MetricHintLabel label="Ведущий канал" hint={hints.leader} />
                         </p>
-                        <div className="mt-1 flex items-center gap-2 text-sm font-medium sm:text-base">
+                        <div className="mt-1.5 flex items-center gap-2 text-base font-semibold text-slate-900 sm:text-lg">
                             <ChannelIconHint
                                 icon={channelMeta[leader.key].Icon}
                                 iconColor={channelMeta[leader.key].iconColor}
@@ -182,29 +182,29 @@ export function ActivityComposition({ data, className }: ActivityCompositionProp
                             <span>{leaderShare}%</span>
                         </div>
                     </div>
-                    <div className="rounded-md border bg-muted/20 px-2 py-1.5 sm:px-3 sm:py-2">
-                        <p className="text-[11px] text-muted-foreground sm:text-xs">
+                    <div className="rounded-md border bg-muted/20 px-2.5 py-2 sm:px-3 sm:py-2.5">
+                        <p className="text-xs font-medium text-slate-700 sm:text-sm">
                             <MetricHintLabel label="Активностей на 1 лид" hint={hints.touchesPerLead} />
                         </p>
-                        <p className="text-sm font-medium tabular-nums sm:text-base">{touchesPerLeadLabel}</p>
+                        <p className="text-lg font-semibold text-slate-900 tabular-nums sm:text-xl">{touchesPerLeadLabel}</p>
                     </div>
-                    <div className="rounded-md border bg-muted/20 px-2 py-1.5 sm:col-span-2 sm:px-3 sm:py-2">
-                        <p className="text-xs text-muted-foreground">
+                    <div className="rounded-md border bg-muted/20 px-2.5 py-2 sm:col-span-2 sm:px-3 sm:py-2.5">
+                        <p className="text-sm font-medium text-slate-700">
                             <MetricHintLabel label="КПА: Активность -> Сделка" hint={hints.touchToDeal} />
                         </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-2.5">
                             <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                                 <div
                                     className="h-full rounded-full bg-[hsl(280,65%,57%)] transition-all"
                                     style={{ width: `${Math.min(100, Math.max(0, touchToDeal))}%` }}
                                 />
                             </div>
-                            <span className="text-sm font-medium tabular-nums">{touchToDeal}%</span>
-                            <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-medium", touchToDealTone)}>
+                            <span className="text-base font-semibold text-slate-900 tabular-nums">{touchToDeal}%</span>
+                            <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-semibold", touchToDealTone)}>
                                 {touchToDealGrade}
                             </span>
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1.5 text-sm text-slate-700">
                             {touchesPerDealLabel
                                 ? `В среднем 1 сделка на ${touchesPerDealLabel} активностей.`
                                 : "Пока нет сделок за период, поэтому коэффициент не набран."}
@@ -266,13 +266,13 @@ function ChannelIconHint({
                 <button
                     type="button"
                     className={cn(
-                        "inline-flex h-4 w-4 translate-y-[1px] items-center justify-center rounded-md border border-transparent focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                        "inline-flex h-5 w-5 translate-y-[1px] items-center justify-center rounded-md border border-transparent focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                         iconBg,
                         iconColor
                     )}
                     aria-label={label}
                 >
-                    <Icon className="size-2.5" />
+                    <Icon className="size-3" />
                     <span className="sr-only">{label}</span>
                 </button>
             </TooltipTrigger>
