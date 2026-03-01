@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronRight, User, UserPlus, Users } from 'lucide-react'
 import { useLeads } from '@/context/LeadsContext'
 import { isLeadAdminDirector } from '@/lib/portal-user'
-import type { Lead, LeadManager, LeadSource } from '@/types/leads'
+import type { Lead, LeadSource } from '@/types/leads'
 import { LEAD_STAGES } from '@/data/leads-mock'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -380,7 +380,7 @@ export function LeadCloudTab() {
 
 function LeadRow({
   lead,
-  source,
+  source: _source,
   getStageName,
   getManagerName,
   onOpenCard,
