@@ -1,4 +1,4 @@
-﻿// [DOC-RU]
+// [DOC-RU]
 // Если ты меняешь этот файл, сначала держи прежний смысл метрик и полей, чтобы UI не разъехался.
 // Смысл файла: карточки динамических KPI за период; если ты добавляешь метрику, добавь ее и в типы, и в источник данных.
 // После правок ты проверяешь экран руками и сверяешь ключевые цифры/периоды.
@@ -125,7 +125,7 @@ export function DynamicKpiCards({ data, todayData, periodLabel, variant = "full"
                                     </div>
                                 </div>
                                 <div className="mt-1 text-center">
-                                    <p className="text-[30px] font-bold leading-none text-slate-900 tabular-nums">
+                                    <p className="text-xl font-bold leading-none text-slate-900 tabular-nums">
                                         {value.toLocaleString("ru-RU")}
                                     </p>
                                     <p className="mt-1 text-base font-semibold leading-snug text-slate-800 break-words">

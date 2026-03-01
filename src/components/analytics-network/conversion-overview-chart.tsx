@@ -4,6 +4,7 @@
 // пользователь должен сразу понимать, от какого этапа к какому считается процент.
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,8 @@ import type { SVGProps } from "react";
 interface ConversionOverviewChartProps {
     funnel: FunnelBoard;
     className?: string;
+    /** При переданном колбэке в шапке карточки показывается кнопка «Сеть» (просмотр сети партнёра) */
+    onViewNetwork?: () => void;
 }
 
 const chartConfig = {
@@ -67,7 +70,7 @@ function calculateConversion(board: FunnelBoard, fromStage: string, toStage: str
     return Math.round((toCount / fromCount) * 100);
 }
 
-export function ConversionOverviewChart({ funnel, className }: ConversionOverviewChartProps) {
+export function ConversionOverviewChart({ funnel, className, onViewNetwork }: ConversionOverviewChartProps) {
     const data: ConversionItem[] = [
         {
             key: "leadToPresentation",
@@ -102,15 +105,29 @@ export function ConversionOverviewChart({ funnel, className }: ConversionOvervie
     return (
         <Card className={cn(className)}>
             <CardHeader className="px-3 pb-2 sm:px-6">
-                <CardTitle className="text-center text-xl font-semibold text-slate-900 sm:text-3xl">Конверсии</CardTitle>
-                <p className="text-center text-sm font-medium text-slate-700 sm:text-base">
-                    Процент лидов, перешедших на следующий шаг воронки.
-                </p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                        <CardTitle className="text-center text-xl font-semibold text-slate-900 sm:text-left sm:text-3xl">Конверсии</CardTitle>
+                        <p className="mt-1 text-center text-sm font-medium text-slate-700 sm:text-left sm:text-base">
+                            Процент лидов, перешедших на следующий шаг воронки.
+                        </p>
+                    </div>
+                    {onViewNetwork && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20"
+                            onClick={onViewNetwork}
+                        >
+                            Сеть
+                        </Button>
+                    )}
+                </div>
             </CardHeader>
             <CardContent className="space-y-4 px-2 pt-1 sm:px-6">
                 <div className="overflow-hidden">
                     <ChartContainer config={chartConfig} className="h-[360px] w-full">
-                        <BarChart data={data} layout="vertical" margin={{ top: 8, right: 24, left: 12, bottom: 8 }}>
+                        <BarChart data={data} layout="vertical" margin={{ top: 8, right: 24, left: 20, bottom: 8 }}>
                             <CartesianGrid horizontal={true} vertical={false} strokeDasharray="3 3" />
                             <XAxis
                                 type="number"
@@ -123,7 +140,7 @@ export function ConversionOverviewChart({ funnel, className }: ConversionOvervie
                             <YAxis
                                 type="category"
                                 dataKey="label"
-                                width={136}
+                                width={200}
                                 tickLine={false}
                                 axisLine={false}
                                 tick={<ConversionAxisTick />}
@@ -138,7 +155,7 @@ export function ConversionOverviewChart({ funnel, className }: ConversionOvervie
                                                 <div className="w-full space-y-1">
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span className="text-muted-foreground">{row?.label ?? "Конверсия"}</span>
-                                                        <span className="font-mono font-medium">{Number(value)}%</span>
+                                                        <span className="font-medium tabular-nums">{Number(value)}%</span>
                                                     </div>
                                                     {row?.description && (
                                                         <p className="text-[11px] text-muted-foreground">{row.description}</p>

@@ -141,73 +141,74 @@ export function CityDetailView({
 
   return (
     <div className="space-y-8">
-      <Header
-        size="large"
-        title={`Город ${city.name} • Супер-админ`}
-        breadcrumbs={[
-          { label: 'Мир', href: '/' },
-          { label: country?.name ?? 'Страна' },
-          { label: city.name },
-        ]}
-        countries={countries}
-        activeCityId={city.id}
-        citiesInActiveCountry={citiesInActiveCountry}
-      />
+      <section className="rounded-2xl bg-surface px-6 py-6 shadow-[0_1px_3px_rgba(0,0,0,0.06)] lg:px-8 lg:py-8">
+        <Header
+          size="large"
+          title={`Город ${city.name} • Супер-админ`}
+          breadcrumbs={[
+            { label: 'Мир', href: '/' },
+            { label: country?.name ?? 'Страна' },
+            { label: city.name },
+          ]}
+          countries={countries}
+          activeCityId={city.id}
+          citiesInActiveCountry={citiesInActiveCountry}
+        />
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1.5">
-          {PERIOD_OPTIONS.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() => setPeriod(item.value)}
-              className={
-                'rounded-full px-4 py-2.5 text-base font-medium transition-colors ' +
-                (item.value === period
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')
-              }
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="inline-flex rounded-full border border-slate-200 bg-white p-1.5">
+            {PERIOD_OPTIONS.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setPeriod(item.value)}
+                className={
+                  'rounded-full px-4 py-2.5 text-base font-medium transition-colors ' +
+                  (item.value === period
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')
+                }
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="lg"
+              className="text-base"
+              onClick={() => navigate(`/city/${city.id}/mailings`)}
             >
-              {item.label}
-            </button>
+              <Mail className="mr-2 size-5" />
+              Направить рассылку
+            </Button>
+            <Button onClick={() => setAddDialogOpen(true)} size="lg" className="text-base">
+              <Plus className="mr-2 size-5" />
+              Добавить партнера
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
+          {stats.map((stat) => (
+            <Card key={stat.label} className="py-5">
+              <CardContent className="p-0 px-6">
+                <div className="flex items-center gap-4">
+                  <div className={`flex size-12 items-center justify-center rounded-lg ${stat.iconClass}`}>
+                    <stat.icon className="size-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">{stat.note}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            className="text-base"
-            onClick={() => navigate(`/city/${city.id}/mailings`)}
-          >
-            <Mail className="mr-2 size-5" />
-            Направить рассылку
-          </Button>
-          <Button onClick={() => setAddDialogOpen(true)} size="lg" className="text-base">
-            <Plus className="mr-2 size-5" />
-            Добавить партнера
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="py-5">
-            <CardContent className="p-0 px-6">
-              <div className="flex items-center gap-4">
-                <div className={`flex size-12 items-center justify-center rounded-lg ${stat.iconClass}`}>
-                  <stat.icon className="size-6" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-base text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-semibold tracking-tight">{stat.value}</p>
-                  <p className="mt-1 truncate text-sm text-muted-foreground">{stat.note}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
+      </section>
 
       <Card>
         <CardHeader className="space-y-1.5 pb-4">

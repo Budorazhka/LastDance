@@ -51,7 +51,7 @@ export function Header({ title, breadcrumbs, countries, activeCityId, citiesInAc
           </span>
         ))}
       </nav>
-      <h1 className={isLarge ? 'text-3xl font-semibold tracking-tight' : 'text-2xl font-semibold tracking-tight'}>{title}</h1>
+      <h1 className={`page-title ${isLarge ? 'text-3xl' : 'text-2xl'}`}>{title}</h1>
 
       {countries && countries.length > 0 && (
         <div className={isLarge ? 'mt-5 flex flex-col gap-3' : 'mt-4 flex flex-col gap-2'}>

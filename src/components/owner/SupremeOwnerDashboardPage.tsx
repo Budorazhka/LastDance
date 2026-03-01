@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Star, TrendingUp, Users, X } from "lucide-react"
 import {
@@ -150,6 +150,8 @@ export function SupremeOwnerDashboardPage() {
   const [selectedPartners, setSelectedPartners] = useState<Set<string>>(new Set())
   const [allPartnersModalOpen, setAllPartnersModalOpen] = useState(false)
   const [hierarchyDialogOpen, setHierarchyDialogOpen] = useState(false)
+  /** В кабинете партнёра: "analytics" — только его аналитика, "network" — его сеть с лидербордом */
+  const [partnerViewMode, setPartnerViewMode] = useState<"analytics" | "network">("analytics")
 
   const selectedCabinet = useMemo(
     () =>
@@ -462,6 +464,27 @@ export function SupremeOwnerDashboardPage() {
         }}
       />
 
+      {selectedCabinet?.scope === "partner" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={partnerViewMode === "analytics" ? "default" : "outline"}
+            size="sm"
+            className={partnerViewMode === "analytics" ? "bg-emerald-700 hover:bg-emerald-600" : "border-slate-300"}
+            onClick={() => setPartnerViewMode("analytics")}
+          >
+            Аналитика {selectedCabinet.label}
+          </Button>
+          <Button
+            variant={partnerViewMode === "network" ? "default" : "outline"}
+            size="sm"
+            className={partnerViewMode === "network" ? "bg-emerald-700 hover:bg-emerald-600" : "border-slate-300"}
+            onClick={() => setPartnerViewMode("network")}
+          >
+            Сеть {selectedCabinet.label}
+          </Button>
+        </div>
+      )}
+
       <div className="grid items-stretch gap-5 lg:grid-cols-[380px_1fr]">
         <div className="flex min-w-0 flex-col gap-4">
           <StaticKpiCards
@@ -590,112 +613,182 @@ export function SupremeOwnerDashboardPage() {
         </div>
 
         <div className="flex w-full min-h-0 flex-col gap-4 self-start">
-          <div className="flex flex-col gap-3 rounded-lg border bg-card px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-4">
-            <div className="min-w-0 flex-1">
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Поиск партнёра"
-                className="h-10 text-readable-base"
+          {selectedCabinet?.scope === "partner" && partnerViewMode === "analytics" ? (
+            <div className="flex flex-col gap-4">
+              <div className="grid items-start gap-4 xl:grid-cols-12">
+                <ActivityCalendarCard
+                  period={globalPeriod}
+                  range={range}
+                  monthRange={monthRangeForCalendar}
+                  monthData={monthCalendarData}
+                  allTimeData={allTimeCalendarData}
+                  className="h-full xl:col-span-8"
+                />
+                {salesFunnel ? (
+                  <ConversionOverviewChart funnel={salesFunnel} className="h-full xl:col-span-4" />
+                ) : (
+                  <Card className="h-full xl:col-span-4">
+                    <CardContent className="flex h-full items-center justify-center p-6 text-readable-sm text-muted-high-contrast">
+                      Нет данных по воронке продаж.
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <LeadsChart data={leadsData} period={leadsPeriod} onPeriodChange={setLeadsPeriod} />
+                <ActivityChart
+                  data={activityData}
+                  period={activityPeriod}
+                  onPeriodChange={setActivityPeriod}
+                />
+              </div>
+              <PersonalAnalyticsInsights
+                dynamicKpi={globalData.dynamicKpi}
+                funnels={globalData.funnels}
+                period={globalPeriod}
+                allowPlanEditing={false}
+                onViewNetwork={() => setPartnerViewMode("network")}
               />
+              <div className="space-y-3">
+                <div className="text-center">
+                  <p className="text-xl font-semibold text-slate-900 sm:text-2xl">Активность партнеров</p>
+                  <p className="text-base text-slate-700">
+                    Топ по лидам и распределение по активности за выбранный период.
+                  </p>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <TopReferralsChart
+                    partners={topReferralsPartners}
+                    period={topReferralsPeriod}
+                    onPeriodChange={setTopReferralsPeriod}
+                  />
+                  <PartnersActivityDistribution
+                    partners={engagementPartners}
+                    period={engagementPeriod}
+                    onPeriodChange={setEngagementPeriod}
+                    onSegmentClick={(marker) => setSelectedActivityMarker(marker)}
+                  />
+                </div>
+              </div>
+              <div className="mt-8">
+                <FunnelKanban funnels={globalData.funnels} />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="owner-only-online"
-                checked={onlyOnline}
-                onCheckedChange={setOnlyOnline}
+          ) : (
+            <>
+              <div className="flex flex-col gap-3 rounded-lg border bg-card px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-4">
+                <div className="min-w-0 flex-1">
+                  <Input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Поиск партнёра"
+                    className="h-10 text-readable-base"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="owner-only-online"
+                    checked={onlyOnline}
+                    onCheckedChange={setOnlyOnline}
+                  />
+                  <Label htmlFor="owner-only-online" className="text-readable-sm font-normal text-high-contrast">
+                    Только онлайн
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="owner-inactive-last7"
+                    checked={inactiveLast7}
+                    onCheckedChange={setInactiveLast7}
+                  />
+                  <Label
+                    htmlFor="owner-inactive-last7"
+                    className="text-readable-sm font-normal text-high-contrast"
+                  >
+                    Не активные 7 дней
+                  </Label>
+                </div>
+              </div>
+              <LeaderboardTable
+                partners={sortedPartners}
+                maxLeadsAdded={maxLeadsAdded}
+                maxStageChangesCount={maxStageChangesCount}
+                sortColumn={sortColumn}
+                sortDirection={sortDirection}
+                onSortChange={handleSortChange}
+                onResetFilters={handleResetFilters}
+                className="w-full flex-1 min-h-0"
               />
-              <Label htmlFor="owner-only-online" className="text-readable-sm font-normal text-high-contrast">
-                Только онлайн
-              </Label>
+            </>
+          )}
+        </div>
+      </div>
+
+      {((selectedCabinet?.scope !== "partner") || (selectedCabinet?.scope === "partner" && partnerViewMode === "network")) && (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <LeadsChart data={leadsData} period={leadsPeriod} onPeriodChange={setLeadsPeriod} />
+            <ActivityChart
+              data={activityData}
+              period={activityPeriod}
+              onPeriodChange={setActivityPeriod}
+            />
+          </div>
+
+          <div className="grid items-start gap-4 xl:grid-cols-12">
+            <ActivityCalendarCard
+              period={globalPeriod}
+              range={range}
+              monthRange={monthRangeForCalendar}
+              monthData={monthCalendarData}
+              allTimeData={allTimeCalendarData}
+              className="h-full xl:col-span-8"
+            />
+            {salesFunnel ? (
+              <ConversionOverviewChart funnel={salesFunnel} className="h-full xl:col-span-4" />
+            ) : (
+              <Card className="h-full xl:col-span-4">
+                <CardContent className="flex h-full items-center justify-center p-6 text-readable-sm text-muted-high-contrast">
+                  Нет данных по воронке продаж.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <PersonalAnalyticsInsights
+            dynamicKpi={globalData.dynamicKpi}
+            funnels={globalData.funnels}
+            period={globalPeriod}
+            allowPlanEditing={selectedCabinet?.scope === "me"}
+          />
+
+          <div className="space-y-3">
+            <div className="text-center">
+              <p className="text-xl font-semibold text-slate-900 sm:text-2xl">Активность партнеров</p>
+              <p className="text-base text-slate-700">
+                Топ по лидам и распределение по активности за выбранный период.
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="owner-inactive-last7"
-                checked={inactiveLast7}
-                onCheckedChange={setInactiveLast7}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <TopReferralsChart
+                partners={topReferralsPartners}
+                period={topReferralsPeriod}
+                onPeriodChange={setTopReferralsPeriod}
               />
-              <Label
-                htmlFor="owner-inactive-last7"
-                className="text-readable-sm font-normal text-high-contrast"
-              >
-                Не активные 7 дней
-              </Label>
+              <PartnersActivityDistribution
+                partners={engagementPartners}
+                period={engagementPeriod}
+                onPeriodChange={setEngagementPeriod}
+                onSegmentClick={(marker) => setSelectedActivityMarker(marker)}
+              />
             </div>
           </div>
 
-          <LeaderboardTable
-            partners={sortedPartners}
-            maxLeadsAdded={maxLeadsAdded}
-            maxStageChangesCount={maxStageChangesCount}
-            sortColumn={sortColumn}
-            sortDirection={sortDirection}
-            onSortChange={handleSortChange}
-            onResetFilters={handleResetFilters}
-            className="w-full flex-1 min-h-0"
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <LeadsChart data={leadsData} period={leadsPeriod} onPeriodChange={setLeadsPeriod} />
-        <ActivityChart
-          data={activityData}
-          period={activityPeriod}
-          onPeriodChange={setActivityPeriod}
-        />
-      </div>
-
-      <div className="grid items-start gap-4 xl:grid-cols-12">
-        <ActivityCalendarCard
-          period={globalPeriod}
-          range={range}
-          monthRange={monthRangeForCalendar}
-          monthData={monthCalendarData}
-          allTimeData={allTimeCalendarData}
-          className="h-full xl:col-span-8"
-        />
-        {salesFunnel ? (
-          <ConversionOverviewChart funnel={salesFunnel} className="h-full xl:col-span-4" />
-        ) : (
-          <Card className="h-full xl:col-span-4">
-            <CardContent className="flex h-full items-center justify-center p-6 text-readable-sm text-muted-high-contrast">
-              Нет данных по воронке продаж.
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <PersonalAnalyticsInsights
-        dynamicKpi={globalData.dynamicKpi}
-        funnels={globalData.funnels}
-        period={globalPeriod}
-        allowPlanEditing={selectedCabinet?.scope === "me"}
-      />
-
-      <div className="space-y-3">
-        <div className="text-center">
-          <p className="text-xl font-semibold text-slate-900 sm:text-2xl">Активность партнеров</p>
-          <p className="text-base text-slate-700">
-            Топ по лидам и распределение по активности за выбранный период.
-          </p>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <TopReferralsChart
-            partners={topReferralsPartners}
-            period={topReferralsPeriod}
-            onPeriodChange={setTopReferralsPeriod}
-          />
-          <PartnersActivityDistribution
-            partners={engagementPartners}
-            period={engagementPeriod}
-            onPeriodChange={setEngagementPeriod}
-            onSegmentClick={(marker) => setSelectedActivityMarker(marker)}
-          />
-        </div>
-      </div>
-
-      <FunnelKanban funnels={globalData.funnels} />
+          <div className="mt-8">
+            <FunnelKanban funnels={globalData.funnels} />
+          </div>
+        </>
+      )}
 
       {selectedActivityMarker !== null && (
         <Dialog

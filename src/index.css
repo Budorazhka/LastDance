@@ -2,7 +2,12 @@
 @import 'tw-animate-css';
 
 :root {
-  --background: oklch(0.99 0 0);
+  /* Фон страницы: мягкий пастельный бежевый */
+  --background: oklch(0.98 0.012 82);
+  /* Поверхность для панелей: чуть теплее фона, без резкого перехода */
+  --surface: oklch(0.992 0.008 80);
+  /* Сайдбар: тот же тон, чуть глубже для баланса */
+  --sidebar-bg: oklch(0.965 0.018 82);
   --foreground: oklch(0.05 0.01 285);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.05 0.01 285);
@@ -35,6 +40,8 @@
 @theme inline {
   --font-sans: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-sidebar-bg: var(--sidebar-bg);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -71,15 +78,35 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-family: var(--font-sans);
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
     margin: 0;
+    line-height: 1.5;
+  }
+  #root {
+    font-family: inherit;
   }
 }
 
-/* Custom font sizes for improved readability in owner cabinet */
+/* Typography: page and section titles */
 @layer utilities {
+  .page-title {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+  }
+
+  /* Custom font sizes for improved readability in owner cabinet */
   .text-readable-xs { font-size: 0.875rem; line-height: 1.4; }
   .text-readable-sm { font-size: 1rem; line-height: 1.5; }
   .text-readable-base { font-size: 1.125rem; line-height: 1.5; }

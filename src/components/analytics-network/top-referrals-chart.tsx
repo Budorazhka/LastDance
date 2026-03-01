@@ -80,11 +80,11 @@ export function TopReferralsChart({ partners, period, onPeriodChange }: TopRefer
                 </div>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-2">
-                <ChartContainer config={chartConfig} className="h-[290px] w-full">
+                <ChartContainer config={chartConfig} className="h-[320px] w-full min-h-0">
                     <BarChart
                         data={topPartners}
                         layout="vertical"
-                        margin={{ left: 0, right: 8, top: 0, bottom: 0 }}
+                        margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
                     >
                         <CartesianGrid
                             horizontal={false}
@@ -104,7 +104,7 @@ export function TopReferralsChart({ partners, period, onPeriodChange }: TopRefer
                             dataKey="name"
                             tickLine={false}
                             axisLine={false}
-                            width={128}
+                            width={200}
                             tick={{ fill: "#475569", fontSize: 14, fontWeight: 500 }}
                         />
                         <ChartTooltip content={<ChartTooltipContent />} />

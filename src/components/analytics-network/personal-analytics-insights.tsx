@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // [DOC-RU]
 // Если ты меняешь этот файл, сначала держи прежний смысл метрик и полей, чтобы UI не разъехался.
 // Смысл файла: компактный блок план/факт и статус воронки в личной аналитике.
@@ -28,6 +28,8 @@ interface PersonalAnalyticsInsightsProps {
     funnels: FunnelBoard[];
     period: AnalyticsPeriod;
     allowPlanEditing?: boolean;
+    /** Колбэк для кнопки «Сеть» в блоке конверсий (просмотр сети партнёра) */
+    onViewNetwork?: () => void;
 }
 
 type PlanBucket = "week" | "month";
@@ -160,6 +162,7 @@ export function PersonalAnalyticsInsights({
     funnels,
     period,
     allowPlanEditing = true,
+    onViewNetwork,
 }: PersonalAnalyticsInsightsProps) {
     const salesFunnel = funnels.find((funnel) => funnel.id === "sales") ?? funnels[0];
     const defaultPlanTargets = useMemo(() => buildDefaultPlanTargets(dynamicKpi), [dynamicKpi]);
@@ -360,7 +363,7 @@ export function PersonalAnalyticsInsights({
                 </CardContent>
             </Card>
 
-            <ConversionOverviewChart funnel={salesFunnel} className="h-full" />
+            <ConversionOverviewChart funnel={salesFunnel} className="h-full" onViewNetwork={onViewNetwork} />
 
             {allowPlanEditing && (
                 <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
