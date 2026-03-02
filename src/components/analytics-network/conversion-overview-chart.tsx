@@ -74,7 +74,7 @@ export function ConversionOverviewChart({ funnel, className, onViewNetwork }: Co
     const data: ConversionItem[] = [
         {
             key: "leadToPresentation",
-            label: "Лид → Презентация",
+            label: "Лид → През.",
             value: calculateConversion(funnel, "Новый лид", "Презентовали компанию"),
             color: "hsl(214, 84%, 56%)",
             description: "Из новых лидов дошли до презентации",
@@ -184,12 +184,12 @@ export function ConversionOverviewChart({ funnel, className, onViewNetwork }: Co
                 <div className="mt-4 grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
                     {data.map((item) => (
                         <div key={item.key} className="rounded-lg border bg-muted/20 px-3 py-2.5 sm:px-3.5 sm:py-3">
-                            <div className="flex items-center justify-between gap-1.5">
-                                <div className="flex min-w-0 items-center gap-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1 flex items-center gap-1.5">
                                     <span className="h-2.5 w-2.5 shrink-0 rounded-full sm:h-3 sm:w-3" style={{ backgroundColor: item.color }} />
                                     <span className="text-base font-medium text-slate-700 break-words">{item.label}</span>
                                 </div>
-                                <span className="text-2xl font-bold leading-none text-slate-900 tabular-nums">{item.value}%</span>
+                                <span className="shrink-0 text-xl font-bold leading-none text-slate-900 tabular-nums">{item.value}%</span>
                             </div>
                             <p className="mt-1 text-sm leading-snug text-slate-700">{item.description}</p>
                         </div>

@@ -67,7 +67,7 @@ export function LeadsAdminPage() {
               value="partners"
               className="rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-slate-100 data-[state=inactive]:hover:text-slate-900"
             >
-              Партнёры по email
+              Доступ к разделу
             </TabsTrigger>
             <TabsTrigger
               value="sources"

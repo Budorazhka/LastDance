@@ -61,22 +61,22 @@ export function LeadPartnersTab() {
     <div className="space-y-6">
       {!isDirector && (
         <p className="text-sm text-slate-600">
-          Добавление партнёров по email ЛК доступно только директору.
+          Выдавать доступ к разделу «Контроль лидов» может только директор.
         </p>
       )}
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
           <div>
-            <CardTitle className="text-base font-semibold">Партнёры по email ЛК</CardTitle>
+            <CardTitle className="text-base font-semibold">Кто имеет доступ к разделу «Контроль лидов»</CardTitle>
             <p className="mt-1 text-sm text-slate-600">
-              Партнёры, которым водятся лиды. Задаются по email личного кабинета.
+              Пользователи, которым открыт этот раздел (видят облако лидов, настройки, менеджеров и т.д.). Добавляются по email личного кабинета.
             </p>
           </div>
           {isDirector && (
             <Button className="rounded-full gap-2" size="sm" onClick={() => setOpen(true)}>
               <UserPlus className="size-4" />
-              Добавить партнёра
+              Выдать доступ
             </Button>
           )}
         </CardHeader>
@@ -122,16 +122,16 @@ export function LeadPartnersTab() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Добавить партнёра по email ЛК</DialogTitle>
+            <DialogTitle>Выдать доступ по email личного кабинета</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Email ЛК</Label>
+              <Label>Email личного кабинета</Label>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="partner@lk.example.com"
+                placeholder="user@example.com"
               />
             </div>
             <div className="space-y-2">
@@ -174,7 +174,7 @@ export function LeadPartnersTab() {
               Отмена
             </Button>
             <Button onClick={handleAdd} disabled={!email.trim()}>
-              Добавить
+              Выдать доступ
             </Button>
           </DialogFooter>
         </DialogContent>

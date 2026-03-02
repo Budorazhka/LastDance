@@ -119,8 +119,8 @@ export function ActivityComposition({ data, className }: ActivityCompositionProp
                 <CardTitle className="text-center text-base font-semibold text-slate-900 sm:text-lg">Состав активности</CardTitle>
             </CardHeader>
             <CardContent className="px-3 pb-4 pt-2 sm:px-4">
-                <div className="flex flex-col items-center gap-4 lg:flex-row lg:justify-center">
-                    <ChartContainer config={chartConfig} className="mx-auto aspect-square w-full max-w-[300px] shrink-0 sm:max-w-[340px]">
+                <div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-center lg:gap-8">
+                    <ChartContainer config={chartConfig} className="mx-auto aspect-square w-full max-w-[280px] shrink-0 pr-2 sm:max-w-[300px] sm:pr-3">
                         <PieChart>
                             <ChartTooltip content={<ChartTooltipContent />} />
                             <Pie

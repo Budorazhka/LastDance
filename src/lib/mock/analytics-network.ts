@@ -889,6 +889,28 @@ function getPersonDynamicKpi(personId: string, period: AnalyticsPeriod): Dynamic
     };
 }
 
+/** KPI по всей сети партнёра: он сам + все прямые рефералы (для календаря активности и блоков «Сеть [имя]»). */
+function getPersonNetworkDynamicKpi(personId: string, period: AnalyticsPeriod): DynamicKpi {
+    const self = getPersonDynamicKpi(personId, period);
+    const referralIds = getDirectReferralIds(personId);
+    if (referralIds.length === 0) return self;
+
+    const referralKpis = referralIds.map((id) => getPersonDynamicKpi(id, period));
+    const sum = (key: keyof DynamicKpi): number =>
+        (referralKpis.reduce((acc, kpi) => acc + (kpi[key] as number), 0) as number) + (self[key] as number);
+
+    return {
+        addedListings: sum("addedListings"),
+        addedLevel1Referrals: sum("addedLevel1Referrals"),
+        addedLevel2Referrals: sum("addedLevel2Referrals"),
+        addedLeads: sum("addedLeads"),
+        callClicks: sum("callClicks"),
+        chatOpens: sum("chatOpens"),
+        selectionsCreated: sum("selectionsCreated"),
+        deals: sum("deals"),
+    };
+}
+
 export function getDirectReferralIds(personId: string): string[] {
     return referralChildrenByPartnerId.get(personId) ?? [];
 }
@@ -929,16 +951,20 @@ function getPresence(
     };
 }
 
-function buildPersonStaticKpi(personId: string, referralsCount: number): StaticKpi {
-    const allTimeKpi = getPersonDynamicKpi(personId, "allTime");
-    const allTimeFunnels = generateFunnels("allTime", allTimeKpi);
+function buildPersonStaticKpi(
+    personId: string,
+    referralsCount: number,
+    allTimeKpi?: DynamicKpi
+): StaticKpi {
+    const kpi = allTimeKpi ?? getPersonDynamicKpi(personId, "allTime");
+    const allTimeFunnels = generateFunnels("allTime", kpi);
     const allTimeDeals = getDealsFromFunnels(allTimeFunnels);
     const seed = seedFromString(`self-static-${personId}`);
 
     return {
         level1Referrals: referralsCount,
-        totalListings: Math.max(18, allTimeKpi.addedListings + 24 + (seed % 28)),
-        totalLeads: Math.max(42, allTimeKpi.addedLeads + 72 + (seed % 110)),
+        totalListings: Math.max(18, kpi.addedListings + 24 + (seed % 28)),
+        totalLeads: Math.max(42, kpi.addedLeads + 72 + (seed % 110)),
         totalDeals: Math.max(1, allTimeDeals),
     };
 }
@@ -1035,14 +1061,15 @@ export function getPersonAnalyticsData(
         return personPeriodCache[cacheKey];
     }
 
-    const baseTotals = getPersonDynamicKpi(personId, period);
+    const baseTotals = getPersonNetworkDynamicKpi(personId, period);
     const funnels = generateFunnels(period, baseTotals);
     const totals: DynamicKpi = {
         ...baseTotals,
         deals: getDealsFromFunnels(funnels),
     };
     const referrals = generatePersonReferrals(personId, period, totals);
-    const staticKpiData = buildPersonStaticKpi(personId, referrals.length);
+    const allTimeNetworkKpi = getPersonNetworkDynamicKpi(personId, "allTime");
+    const staticKpiData = buildPersonStaticKpi(personId, referrals.length, allTimeNetworkKpi);
     const range = getPeriodDateRange(period);
     const presence = getPresence(basePartner, period, personId);
 

@@ -43,7 +43,7 @@ export const INITIAL_LEAD_MANAGERS: LeadManager[] = [
   { id: 'lm-5', login: 'manager.multi@test.com', name: 'Дмитрий Универсалов', sourceTypes: ['primary', 'secondary'] },
 ]
 
-/** Партнёры по email ЛК — кому водятся лиды */
+/** Пользователи с доступом к разделу «Контроль лидов» (по email ЛК) */
 export const INITIAL_LEAD_PARTNERS: LeadPartnerByEmail[] = [
   { id: 'lp-1', email: 'partner1@lk.test', sourceType: 'primary', cityId: 'batumi' },
   { id: 'lp-2', email: 'partner2@lk.test', sourceType: 'secondary', cityId: 'batumi' },
