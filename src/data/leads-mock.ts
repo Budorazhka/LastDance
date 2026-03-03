@@ -4,16 +4,71 @@ import type {
   LeadManager,
   LeadPartnerByEmail,
   LeadStage,
+  LeadStageId,
   PortalUser,
 } from '@/types/leads'
 
-/** Стадии воронки продаж для лидов (совпадают с sales funnel в аналитике) */
+/**
+ * Полные стадии воронки продаж (из шаблона sales в analytics-network).
+ * Сгруппированы по колонкам: rejection → in_progress → success.
+ */
 export const LEAD_STAGES: LeadStage[] = [
-  { id: 'new', name: 'Новый лид', order: 1 },
-  { id: 'presented', name: 'Презентовали компанию', order: 2 },
-  { id: 'showing', name: 'Показ', order: 3 },
-  { id: 'deal', name: 'Заключен договор', order: 4 },
+  // --- rejection ---
+  { id: 'defective',   name: 'Бракованный лид',     order: 1 },
+  { id: 'refused',     name: 'Отказ',               order: 2 },
+  { id: 'no_answer_3', name: 'Недозвонился 3',      order: 3 },
+  { id: 'no_answer_2', name: 'Недозвонился 2',      order: 4 },
+  { id: 'no_answer_1', name: 'Недозвонился 1',      order: 5 },
+  // --- in_progress ---
+  { id: 'new',              name: 'Новый лид',                    order: 6 },
+  { id: 'callback',         name: 'Попросил связаться позже',     order: 7 },
+  { id: 'presented',        name: 'Презентовали компанию',        order: 8 },
+  { id: 'country_discussed', name: 'Обсудили ситуацию в стране', order: 9 },
+  { id: 'need_identified',  name: 'Выявлена потребность',         order: 10 },
+  { id: 'need_adjusted',    name: 'Потребность скорректирована',  order: 11 },
+  { id: 'kp_sent',          name: 'Отправлено КП',                order: 12 },
+  { id: 'objections',       name: 'Отработка возражений',         order: 13 },
+  { id: 'deferred',         name: 'Отложенный спрос',             order: 14 },
+  { id: 'warmup',           name: 'Прогрев',                      order: 15 },
+  { id: 'showing',          name: 'Показ',                        order: 16 },
+  { id: 'deposit',          name: 'Задаток получен',              order: 17 },
+  { id: 'deal',             name: 'Заключен договор',             order: 18 },
+  // --- success (Золотой фонд) ---
+  { id: 'golden',     name: 'Золотой фонд',                          order: 19 },
+  { id: 'check_in',   name: 'Узнал как дела',                        order: 20 },
+  { id: 'referral',   name: 'Взять рекомендацию',                    order: 21 },
+  { id: 'new_deals',  name: 'Выявление потребности о новых сделках', order: 22 },
 ]
+
+export type FunnelColumnId = 'rejection' | 'in_progress' | 'success'
+
+export const LEAD_STAGE_COLUMN: Record<string, FunnelColumnId> = {
+  defective:          'rejection',
+  refused:            'rejection',
+  no_answer_3:        'rejection',
+  no_answer_2:        'rejection',
+  no_answer_1:        'rejection',
+  new:                'in_progress',
+  callback:           'in_progress',
+  presented:          'in_progress',
+  country_discussed:  'in_progress',
+  need_identified:    'in_progress',
+  need_adjusted:      'in_progress',
+  kp_sent:            'in_progress',
+  objections:         'in_progress',
+  deferred:           'in_progress',
+  warmup:             'in_progress',
+  showing:            'in_progress',
+  deposit:            'in_progress',
+  deal:               'in_progress',
+  golden:             'success',
+  check_in:           'success',
+  referral:           'success',
+  new_deals:          'success',
+}
+
+export const LEAD_STAGE_ORDER: readonly LeadStageId[] =
+  LEAD_STAGES.map((s) => s.id)
 
 /** Пользователи портала с доступом к админке лидов (мок) */
 export const PORTAL_USERS: PortalUser[] = [
@@ -31,10 +86,8 @@ export const PORTAL_USERS: PortalUser[] = [
   },
 ]
 
-/** Текущий пользователь портала (мок — для проверки доступа) */
 export const CURRENT_PORTAL_USER_ID = 'user-director'
 
-/** Менеджеры по лидам — кому можно распределять */
 export const INITIAL_LEAD_MANAGERS: LeadManager[] = [
   { id: 'lm-1', login: 'manager.primary@test.com', name: 'Анна Первичкина', sourceTypes: ['primary'] },
   { id: 'lm-2', login: 'manager.secondary@test.com', name: 'Борис Вторичкин', sourceTypes: ['secondary'] },
@@ -43,27 +96,30 @@ export const INITIAL_LEAD_MANAGERS: LeadManager[] = [
   { id: 'lm-5', login: 'manager.multi@test.com', name: 'Дмитрий Универсалов', sourceTypes: ['primary', 'secondary'] },
 ]
 
-/** Пользователи с доступом к разделу «Контроль лидов» (по email ЛК) */
 export const INITIAL_LEAD_PARTNERS: LeadPartnerByEmail[] = [
   { id: 'lp-1', email: 'partner1@lk.test', sourceType: 'primary', cityId: 'batumi' },
   { id: 'lp-2', email: 'partner2@lk.test', sourceType: 'secondary', cityId: 'batumi' },
 ]
 
-/** Начальное правило раздачи */
 export const DEFAULT_DISTRIBUTION_RULE: DistributionRule = {
   type: 'round_robin',
   params: {},
 }
 
-/** Начальный рукопашной распределитель (null = не назначен) */
 export const DEFAULT_MANUAL_DISTRIBUTOR_ID: string | null = 'lm-5'
 
-/** Генерируем мок-лидов для облака (много, чтобы проверять списки по источникам) */
+const MOCK_NAMES = [
+  'Иван Петров', 'Мария Сидорова', 'Алексей Козлов', 'Елена Новикова', 'Дмитрий Морозов',
+  'Ольга Волкова', 'Сергей Соколов', 'Анна Лебедева', 'Николай Кузнецов', 'Татьяна Попова',
+  'Андрей Васильев', 'Наталья Павлова', 'Михаил Семёнов', 'Екатерина Голубева', 'Владимир Виноградов',
+  'Светлана Орлова', 'Артём Жуков', 'Ирина Белова', 'Роман Крылов', 'Юлия Комарова',
+]
+
 function createMockLeads(): Lead[] {
   const now = new Date()
   const leads: Lead[] = []
   const sources: Lead['source'][] = ['primary', 'secondary', 'rent', 'ad_campaigns']
-  const stages = ['new', 'presented', 'showing', 'deal']
+  const allStageIds = LEAD_STAGES.map((s) => s.id)
   const managers = ['lm-1', 'lm-2', 'lm-3', 'lm-4', 'lm-5', null]
   const channels: NonNullable<Lead['channel']>[] = ['form', 'ad', 'partner', 'other']
 
@@ -72,14 +128,21 @@ function createMockLeads(): Lead[] {
     d.setHours(d.getHours() - (i % 48))
     d.setDate(d.getDate() - Math.floor(i / 48))
     const source = sources[i % 4]
-    const stageId = stages[i % 4]
+    const stageId = allStageIds[i % allStageIds.length]
     const managerId = managers[i % 6]
+    const createdAt = d.toISOString()
+    const updatedAt = i % 5 === 0 ? undefined : new Date(d.getTime() + 60 * 60 * 1000).toISOString()
+    const rejectionNoTask = LEAD_STAGE_COLUMN[stageId] === 'rejection'
+      && stageId !== 'no_answer_1' && stageId !== 'no_answer_2'
     leads.push({
       id: `lead-${i + 1}`,
+      name: `${MOCK_NAMES[i % MOCK_NAMES.length]}`,
       source,
       stageId,
       managerId,
-      createdAt: d.toISOString(),
+      createdAt,
+      updatedAt,
+      hasTask: rejectionNoTask ? false : i % 3 !== 0,
       channel: channels[i % 4],
     })
   }

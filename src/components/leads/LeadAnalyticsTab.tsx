@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { User, Users } from 'lucide-react'
+import { User, Users, LayoutGrid } from 'lucide-react'
 import { useLeads } from '@/context/LeadsContext'
 import { LEAD_STAGES } from '@/data/leads-mock'
 import type { LeadSource } from '@/types/leads'
@@ -7,7 +7,10 @@ import type { AnalyticsPeriod } from '@/types/analytics'
 import type { FunnelBoard, FunnelColumn, FunnelStage } from '@/types/analytics'
 import { getAnalyticsData } from '@/lib/mock/analytics-network'
 import { ConversionOverviewChart, FunnelKanban } from '@/components/analytics-network'
+import { LeadsCardTableDialog } from '@/components/leads/LeadsCardTableDialog'
+import { LeadsCardTableV2Dialog } from '@/components/leads/LeadsCardTableV2Dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -62,6 +65,8 @@ function buildFunnelFromLeads(leads: { stageId: string }[]): FunnelBoard {
 export function LeadAnalyticsTab() {
   const [period, setPeriod] = useState<AnalyticsPeriod>('month')
   const [selectedManagerId, setSelectedManagerId] = useState<string>('_all')
+  const [cardTableOpen, setCardTableOpen] = useState(false)
+  const [cardTableV2Open, setCardTableV2Open] = useState(false)
   const { state } = useLeads()
   const { leadPool, leadManagers } = state
 
@@ -158,8 +163,42 @@ export function LeadAnalyticsTab() {
           <span className="text-sm text-slate-500">
             Сейчас: <span className="font-medium text-slate-700">{scopeLabel}</span>
           </span>
+          <Button
+            variant="outline"
+            className="gap-2 border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+            onClick={() => setCardTableOpen(true)}
+          >
+            <LayoutGrid className="size-4" />
+            Карточный стол лидов
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2 border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"
+            onClick={() => setCardTableV2Open(true)}
+          >
+            <LayoutGrid className="size-4" />
+            Карточный стол лидов v2
+          </Button>
         </CardContent>
       </Card>
+
+      <LeadsCardTableDialog
+        open={cardTableOpen}
+        onOpenChange={setCardTableOpen}
+        selectedManagerId={selectedManagerId}
+        onSelectedManagerIdChange={setSelectedManagerId}
+        period={period}
+        onPeriodChange={setPeriod}
+      />
+
+      <LeadsCardTableV2Dialog
+        open={cardTableV2Open}
+        onOpenChange={setCardTableV2Open}
+        selectedManagerId={selectedManagerId}
+        onSelectedManagerIdChange={setSelectedManagerId}
+        period={period}
+        onPeriodChange={setPeriod}
+      />
 
       {/* Воронка продаж — те же этапы CRM, что и в канбане на странице партнёра */}
       <section>

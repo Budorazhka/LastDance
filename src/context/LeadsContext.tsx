@@ -111,7 +111,9 @@ function leadsReducer(state: LeadsState, action: LeadsAction): LeadsState {
       return {
         ...state,
         leadPool: state.leadPool.map((l) =>
-          l.id === action.leadId ? { ...l, stageId: action.stageId } : l
+          l.id === action.leadId
+            ? { ...l, stageId: action.stageId, updatedAt: new Date().toISOString() }
+            : l
         ),
       }
     case 'SET_DISTRIBUTION_RULE':
