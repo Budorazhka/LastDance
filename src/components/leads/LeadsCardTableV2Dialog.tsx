@@ -1,9 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { AlertTriangle, BarChart3, CheckCircle2, Clock, Filter, Search, UserCheck, X, XCircle } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { AlertTriangle, BarChart3, CheckCircle2, Clock, Filter, Search, UserCheck, X } from "lucide-react"
 import { useLeads } from "@/context/LeadsContext"
-import type { AnalyticsPeriod } from "@/types/analytics"
 import type { Lead } from "@/types/leads"
 import { LEAD_STAGES, LEAD_STAGE_COLUMN } from "@/data/leads-mock"
 import {
@@ -98,15 +97,11 @@ export function LeadsCardTableV2Dialog({
   onOpenChange,
   selectedManagerId,
   onSelectedManagerIdChange,
-  period,
-  onPeriodChange,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
   selectedManagerId: string
   onSelectedManagerIdChange: (id: string) => void
-  period: AnalyticsPeriod
-  onPeriodChange: (p: AnalyticsPeriod) => void
 }) {
   const { state } = useLeads()
   const { leadPool, leadManagers } = state
@@ -121,6 +116,13 @@ export function LeadsCardTableV2Dialog({
   const [dateFrom, setDateFrom] = useState<string>("")
   const [dateTo, setDateTo] = useState<string>("")
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [dealSession, setDealSession] = useState(0)
+
+  useEffect(() => {
+    if (open) {
+      setDealSession((s) => s + 1)
+    }
+  }, [open])
 
   const managerNameById = useMemo(() => {
     const map: Record<string, string> = {}
@@ -217,6 +219,28 @@ export function LeadsCardTableV2Dialog({
         ? "Не назначен"
         : leadManagers.find((manager) => manager.id === selectedManagerId)?.name ?? selectedManagerId
 
+  const dealOrderByLeadId = useMemo(() => {
+    const order: Record<string, number> = {}
+    let idx = 0
+
+    const addStages = (stages: typeof IN_PROGRESS_STAGES) => {
+      stages.forEach((stage) => {
+        const leads = leadsByStage[stage.id] ?? []
+        const cursor = cursorByStageId[stage.id] ?? 0
+        const [front] = visibleLeadCards(leads, cursor)
+        if (front) {
+          order[front.id] = idx++
+        }
+      })
+    }
+
+    addStages(IN_PROGRESS_STAGES)
+    addStages(REJECTION_STAGES)
+    addStages(SUCCESS_STAGES)
+
+    return order
+  }, [leadsByStage, cursorByStageId])
+
   const centerBrief = useMemo(() => {
     const inProgress = IN_PROGRESS_STAGES.reduce(
       (sum, stage) => sum + (leadsByStage[stage.id]?.length ?? 0),
@@ -288,13 +312,6 @@ export function LeadsCardTableV2Dialog({
   const overdue = activeLead ? activeLead.taskOverdue === true : false
 
   const activeLeadCommission = activeLead?.commissionUsd ?? null
-  const activeStageCommission =
-    activeStage && leadsByStage[activeStage.id]
-      ? leadsByStage[activeStage.id].reduce(
-          (sum, lead) => sum + (lead.commissionUsd ?? 0),
-          0
-        )
-      : 0
 
   const stepStage = (stageId: string, leads: Lead[], direction: 1 | -1) => {
     if (leads.length === 0) return
@@ -473,6 +490,8 @@ export function LeadsCardTableV2Dialog({
                       activeLeadId={activeLead?.id ?? null}
                       showControls={leads.length > 1}
                       showStats={showStats}
+                      dealOrderByLeadId={dealOrderByLeadId}
+                      dealSession={dealSession}
                     />
                   </div>
                 )
@@ -582,6 +601,8 @@ export function LeadsCardTableV2Dialog({
                       showControls={leads.length > 1}
                       showStats={showStats}
                       compact
+                      dealOrderByLeadId={dealOrderByLeadId}
+                      dealSession={dealSession}
                     />
                   </div>
                 )
@@ -606,6 +627,8 @@ export function LeadsCardTableV2Dialog({
                       showControls={leads.length > 1}
                       showStats={showStats}
                       compact
+                      dealOrderByLeadId={dealOrderByLeadId}
+                      dealSession={dealSession}
                     />
                   </div>
                 )
@@ -635,7 +658,7 @@ export function LeadsCardTableV2Dialog({
                   variant="outline"
                   size="sm"
                   onClick={() => setHistoryOpen(true)}
-                  className="h-7 px-3 text-[12px] font-semibold border-emerald-300 bg-emerald-500 text-white hover:bg-emerald-400 hover:border-emerald-200 shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
+                  className="h-6 px-2.5 text-[11px] font-extrabold tracking-wide rounded-full border-2 border-rose-700 bg-white text-rose-800 hover:bg-rose-600 hover:text-white hover:border-rose-800 shadow-[0_0_0_1px_rgba(255,255,255,0.9),0_6px_16px_rgба(0,0,0,0.75)]"
                 >
                   История отношений
                 </Button>
@@ -743,6 +766,8 @@ function StageDeckPile({
   showControls,
   showStats,
   compact = false,
+  dealOrderByLeadId = {},
+  dealSession = 0,
 }: {
   stageId: string
   stageLabel: string
@@ -754,6 +779,8 @@ function StageDeckPile({
   activeLeadId: string | null
   showControls: boolean
   showStats: boolean
+  dealOrderByLeadId?: Record<string, number>
+  dealSession?: number
   compact?: boolean
 }) {
   const cards = visibleLeadCards(leads, cursor)
@@ -763,7 +790,6 @@ function StageDeckPile({
 
   const totalLeads = leads.length
   const criticalLeads = leads.filter((lead) => getLeadProblemState(lead) === "critical").length
-  const overdueLeads = leads.filter((lead) => lead.taskOverdue).length
   const columnCommission = leads.reduce((sum, lead) => sum + (lead.commissionUsd ?? 0), 0)
 
   const cardWidth = 95
@@ -872,9 +898,11 @@ function StageDeckPile({
           (() => {
             const isFrontCard = cardIndex === cards.length - 1
             const isCritical = getLeadProblemState(lead) === "critical"
+            const dealIndex = dealOrderByLeadId[lead.id] ?? 0
+            const delayMs = dealIndex * 70
             return (
               <button
-                key={lead.id}
+                key={lead.id + "-" + dealSession}
                 type="button"
                 onClick={() => onSelect(lead.id)}
                 className={cn(
@@ -888,6 +916,11 @@ function StageDeckPile({
                   top: hiddenLayers * 3 + 4 + cardIndex * cardStep,
                   left: 0,
                   zIndex: 20 + cardIndex,
+                  animationName: "dealCard",
+                  animationDuration: "420ms",
+                  animationDelay: `${delayMs}ms`,
+                  animationTimingFunction: "cubic-bezier(0.18, 0.89, 0.32, 1.28)",
+                  animationFillMode: "backwards",
                 }}
               >
                 {!isFrontCard && (

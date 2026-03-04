@@ -196,8 +196,6 @@ export function LeadAnalyticsTab() {
         onOpenChange={setCardTableV2Open}
         selectedManagerId={selectedManagerId}
         onSelectedManagerIdChange={setSelectedManagerId}
-        period={period}
-        onPeriodChange={setPeriod}
       />
 
       {/* Воронка продаж — те же этапы CRM, что и в канбане на странице партнёра */}

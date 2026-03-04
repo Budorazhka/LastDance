@@ -41,34 +41,34 @@ export function StatCard({
 
   const cardContent = (
     <Card className={cn(
-      "flex flex-col items-center justify-center px-2.5 py-2 transition-transform hover:-translate-y-0.5 hover:shadow-md border border-slate-200 rounded-lg bg-white/90 h-full min-h-[64px]",
+      "flex flex-col items-center justify-center px-2 py-1.5 transition-transform hover:-translate-y-0.5 hover:shadow-md border border-slate-200 rounded-lg bg-white/90 h-full min-h-[56px]",
       className
     )}>
       <CardContent className="p-0 flex flex-col items-center justify-center text-center w-full h-full gap-0.5 sm:gap-1">
         <div className="rounded-md bg-slate-100 p-1.5 shadow-xs flex items-center justify-center shrink-0 text-slate-700">
-          <Icon className="size-3 stroke-[2.1px]" />
+          <Icon className="size-[18px] stroke-[2.2px]" />
         </div>
 
         <div className="flex flex-col items-center w-full gap-0 min-w-0">
-          <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 leading-tight">
+          <span className="text-[11px] sm:text-[12px] font-medium text-slate-600 leading-tight">
             {label}
           </span>
 
-          <div className="text-sm sm:text-base font-semibold tracking-tight text-slate-900 leading-none mt-0.5 mb-0">
+          <div className="text-base sm:text-lg font-semibold tracking-tight text-slate-900 leading-none mt-0.5 mb-0">
             {typeof value === 'number' ? value.toLocaleString('ru-RU') : value}
           </div>
 
           {typeof trendPercent === 'number' && (
             <div
-              className={cn("inline-flex items-center text-[9px] font-medium px-1.5 py-0.5 rounded-full border whitespace-nowrap", trendBgColor)}
+              className={cn("inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border whitespace-nowrap", trendBgColor)}
             >
-              <TrendIcon className="mr-0.5 size-2 stroke-[2.1px]" />
+              <TrendIcon className="mr-0.5 size-[11px] stroke-[2.1px]" />
               {formattedPercent}
             </div>
           )}
 
           {description && (
-            <p className="text-[9px] sm:text-[10px] font-medium text-slate-500 leading-tight mt-0.5 truncate max-w-full">
+            <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 leading-tight mt-0.5 truncate max-w-full">
               {description}
             </p>
           )}
