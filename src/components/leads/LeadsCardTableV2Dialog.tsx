@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Filter, Search, X } from "lucide-react"
+import { AlertTriangle, BarChart3, CheckCircle2, Clock, Filter, Search, UserCheck, X, XCircle } from "lucide-react"
 import { useLeads } from "@/context/LeadsContext"
 import type { AnalyticsPeriod } from "@/types/analytics"
 import type { Lead } from "@/types/leads"
@@ -59,7 +59,7 @@ function managerInitials(name: string): string {
 
 function getLeadProblemState(lead: Lead): "neutral" | "critical" {
   if (REJECTION_STAGE_IDS.has(lead.stageId)) return "critical"
-  if (!lead.managerId || lead.hasTask === false) return "critical"
+  if (!lead.managerId || lead.hasTask === false || lead.taskOverdue) return "critical"
   return "neutral"
 }
 
@@ -82,10 +82,15 @@ function stageTopArcPosition(index: number, total: number): { x: number; y: numb
   return { x, y }
 }
 
+function formatUsd(amount?: number | null): string {
+  if (!amount || amount <= 0) return "—"
+  return `$${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+}
+
 function visibleLeadCards(leads: Lead[], cursor: number): Lead[] {
   if (leads.length === 0) return []
-  const count = Math.min(3, leads.length)
-  return Array.from({ length: count }, (_, idx) => leads[(cursor + idx) % leads.length])
+  const index = cursor % leads.length
+  return [leads[index]]
 }
 
 export function LeadsCardTableV2Dialog({
@@ -110,6 +115,12 @@ export function LeadsCardTableV2Dialog({
   const [q, setQ] = useState("")
   const [filterNoTask, setFilterNoTask] = useState(false)
   const [filterNoManager, setFilterNoManager] = useState(false)
+  const [filterOverdue, setFilterOverdue] = useState(false)
+  const [onlyCritical, setOnlyCritical] = useState(false)
+  const [showStats, setShowStats] = useState(false)
+  const [dateFrom, setDateFrom] = useState<string>("")
+  const [dateTo, setDateTo] = useState<string>("")
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const managerNameById = useMemo(() => {
     const map: Record<string, string> = {}
@@ -129,16 +140,42 @@ export function LeadsCardTableV2Dialog({
       list = list.filter((lead) => (lead.name ?? lead.id).toLowerCase().includes(term))
     }
 
-    if (filterNoTask || filterNoManager) {
+    if (filterNoTask || filterNoManager || filterOverdue) {
       list = list.filter((lead) => {
-        if (filterNoTask && filterNoManager) return !lead.hasTask || !lead.managerId
-        if (filterNoTask) return !lead.hasTask
-        return !lead.managerId
+        const noTask = lead.hasTask === false
+        const noManager = !lead.managerId
+        const overdue = lead.taskOverdue === true
+
+        const conditions: boolean[] = []
+        if (filterNoTask) conditions.push(noTask)
+        if (filterNoManager) conditions.push(noManager)
+        if (filterOverdue) conditions.push(overdue)
+
+        return conditions.some(Boolean)
+      })
+    }
+
+    if (onlyCritical) {
+      list = list.filter((lead) => getLeadProblemState(lead) === "critical")
+    }
+
+    if (dateFrom || dateTo) {
+      const fromDate = dateFrom ? new Date(dateFrom) : null
+      const toDate = dateTo ? new Date(dateTo) : null
+      if (toDate) {
+        toDate.setHours(23, 59, 59, 999)
+      }
+      list = list.filter((lead) => {
+        const created = new Date(lead.createdAt)
+        if (Number.isNaN(created.getTime())) return true
+        if (fromDate && created < fromDate) return false
+        if (toDate && created > toDate) return false
+        return true
       })
     }
 
     return list
-  }, [leadPool, selectedManagerId, q, filterNoTask, filterNoManager])
+  }, [leadPool, selectedManagerId, q, filterNoTask, filterNoManager, filterOverdue, onlyCritical, dateFrom, dateTo])
 
   const leadsByStage = useMemo(() => {
     const map: Record<string, Lead[]> = {}
@@ -154,12 +191,22 @@ export function LeadsCardTableV2Dialog({
   const totals = useMemo(() => {
     const critical = filteredLeads.filter((lead) => getLeadProblemState(lead) === "critical").length
     const rejection = filteredLeads.filter((lead) => REJECTION_STAGE_IDS.has(lead.stageId)).length
+    const overdue = filteredLeads.filter((lead) => lead.taskOverdue).length
     const healthy = Math.max(0, filteredLeads.length - critical)
+    const totalCommission = filteredLeads.reduce((sum, lead) => sum + (lead.commissionUsd ?? 0), 0)
+    const criticalCommission = filteredLeads.reduce(
+      (sum, lead) =>
+        sum + (getLeadProblemState(lead) === "critical" ? (lead.commissionUsd ?? 0) : 0),
+      0
+    )
     return {
       total: filteredLeads.length,
       critical,
       healthy,
       rejection,
+      overdue,
+      totalCommission,
+      criticalCommission,
     }
   }, [filteredLeads])
 
@@ -229,8 +276,25 @@ export function LeadsCardTableV2Dialog({
   const activityLabel = activityDate
     ? `${activityDate.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}, ${activityDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`
     : "—"
+  const createdLabel = activeLead
+    ? new Date(activeLead.createdAt).toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "—"
   const taskOk = activeLead ? activeLead.hasTask !== false : false
   const managerOk = activeLead ? Boolean(activeLead.managerId) : false
+  const overdue = activeLead ? activeLead.taskOverdue === true : false
+
+  const activeLeadCommission = activeLead?.commissionUsd ?? null
+  const activeStageCommission =
+    activeStage && leadsByStage[activeStage.id]
+      ? leadsByStage[activeStage.id].reduce(
+          (sum, lead) => sum + (lead.commissionUsd ?? 0),
+          0
+        )
+      : 0
 
   const stepStage = (stageId: string, leads: Lead[], direction: 1 | -1) => {
     if (leads.length === 0) return
@@ -246,8 +310,9 @@ export function LeadsCardTableV2Dialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
         showCloseButton={false}
         className="!fixed !inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !m-0 !h-screen !w-screen !max-w-none !rounded-none !border-0 !p-0 overflow-hidden flex flex-col bg-[#0f6e50]"
       >
@@ -272,17 +337,22 @@ export function LeadsCardTableV2Dialog({
               </SelectContent>
             </Select>
 
-            <Label className="ml-2 text-[11px] uppercase tracking-wide text-emerald-100">Период</Label>
-            <Select value={period} onValueChange={(value) => onPeriodChange(value as AnalyticsPeriod)}>
-              <SelectTrigger className="h-7 w-[120px] border-emerald-500 bg-emerald-900/35 text-xs text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="week">Неделя</SelectItem>
-                <SelectItem value="month">Месяц</SelectItem>
-                <SelectItem value="allTime">Всё время</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="ml-2 text-[11px] uppercase tracking-wide text-emerald-100">Дата</Label>
+            <div className="flex items-center gap-1">
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-7 w-[130px] border-emerald-500 bg-emerald-900/35 px-2 text-xs text-white [color-scheme:dark]"
+              />
+              <span className="text-[11px] text-emerald-100">—</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-7 w-[130px] border-emerald-500 bg-emerald-900/35 px-2 text-xs text-white [color-scheme:dark]"
+              />
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -316,8 +386,40 @@ export function LeadsCardTableV2Dialog({
                 >
                   Без менеджера
                 </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={filterOverdue}
+                  onCheckedChange={(v) => setFilterOverdue(v === true)}
+                  className="text-sm focus:bg-emerald-700 focus:text-white"
+                >
+                  Просрочка по задаче
+                </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowStats((v) => !v)}
+              className="h-7 gap-1 border-emerald-300/55 bg-emerald-900/40 px-2 text-xs text-emerald-50 hover:bg-emerald-700/70"
+            >
+              <BarChart3 className="size-3.5" />
+              Статистика
+            </Button>
+
+            <Button
+              variant={onlyCritical ? "default" : "outline"}
+              size="sm"
+              onClick={() => setOnlyCritical((v) => !v)}
+              className={cn(
+                "h-7 gap-1 px-2 text-xs",
+                onlyCritical
+                  ? "border-rose-300 bg-rose-600 text-white hover:bg-rose-700"
+                  : "border-rose-300/70 bg-rose-900/30 text-rose-50 hover:bg-rose-800/60"
+              )}
+            >
+              <AlertTriangle className="size-3.5" />
+              Только проблемные
+            </Button>
 
             <div className="relative">
               <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-emerald-200" />
@@ -341,12 +443,13 @@ export function LeadsCardTableV2Dialog({
           </div>
         </DialogHeader>
 
+
         <div className="relative min-h-0 flex-1 overflow-auto bg-[#0f6e50]">
           <div
-            className="relative mx-auto h-full min-h-[760px] min-w-[1460px]"
+            className="relative mx-auto h-full min-h-[780px] min-w-[1460px]"
             style={{ fontFamily: "Montserrat, sans-serif" }}
           >
-            <div className="absolute left-8 right-[310px] top-2 h-[405px]">
+            <div className="absolute left-8 right-[310px] top-4 h-[405px]">
               {IN_PROGRESS_STAGES.map((stage, index) => {
                 const leads = leadsByStage[stage.id] ?? []
                 const baseCursor = cursorByStageId[stage.id] ?? 0
@@ -369,66 +472,99 @@ export function LeadsCardTableV2Dialog({
                       onSelect={setSelectedLeadId}
                       activeLeadId={activeLead?.id ?? null}
                       showControls={leads.length > 1}
+                      showStats={showStats}
                     />
                   </div>
                 )
               })}
             </div>
 
+            {showStats && totals.totalCommission > 0 && (
+              <div className="absolute left-1/2 top-[46%] -translate-x-1/2 text-[18px] font-bold leading-none text-emerald-100 [text-shadow:_0_2px_6px_rgba(0,0,0,0.85)]">
+                Комиссия по всем этапам: {formatUsd(totals.totalCommission)}
+              </div>
+            )}
+
             <div className="absolute left-1/2 top-[60%] h-[308px] w-[860px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-2 border-amber-300/90">
               <div className="absolute inset-[20px] rounded-[50%] border border-amber-200/85" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div
-                  className="space-y-1.5 text-center text-[24px] leading-tight text-emerald-50 [text-shadow:_0_2px_4px_rgba(0,0,0,0.38)]"
-                  style={{ fontFamily: "'Comic Sans MS', 'Segoe Print', cursive" }}
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="cursor-help">Сеть под контролем</p>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
-                      Область расчета: лиды после текущих фильтров (менеджер, поиск, флаги «Без задач» и «Без менеджера»).
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="cursor-help">Активные лиды: {centerBrief.inProgress}</p>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
-                      Считается как сумма лидов на всех этапах колонки «В работе» (in_progress) в текущей выборке.
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="cursor-help">Проблемные: {totals.critical}</p>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
-                      Это лиды без менеджера, без задачи или на отказных этапах. Источник: текущая выборка лидов.
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="cursor-help">
-                        Узкое место: {centerBrief.bottleneckName} ({centerBrief.bottleneckCount})
+                {!showStats ? (
+                  <div
+                    className="space-y-1.5 text-center text-[22px] leading-tight text-white [text-shadow:_0_2px_8px_rgba(0,0,0,0.75),_0_1px_2px_rgba(0,0,0,0.9)]"
+                    style={{ fontFamily: "'Comic Sans MS', 'Segoe Print', cursive" }}
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="cursor-help">Активные лиды: {centerBrief.inProgress}</p>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
+                        Сумма лидов на всех этапах «В работе» в текущей выборке.
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="cursor-help">Проблемные: {totals.critical}</p>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
+                        Лиды без менеджера, без задачи, с просрочкой или на отказных этапах.
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="cursor-help">
+                          Узкое место: {centerBrief.bottleneckName} ({centerBrief.bottleneckCount})
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
+                        Этап с максимальным числом лидов среди «В работе».
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="cursor-help">Следующий шаг: {centerBrief.focusShort}</p>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
+                        Автоматическая рекомендация по текущей выборке.
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                ) : (
+                  <div
+                    className="grid grid-cols-2 gap-x-10 gap-y-2 text-white [text-shadow:_0_2px_8px_rgba(0,0,0,0.75),_0_1px_2px_rgba(0,0,0,0.9)]"
+                    style={{ fontFamily: "Montserrat, sans-serif" }}
+                  >
+                    <div className="text-center">
+                      <p className="text-[11px] uppercase tracking-widest text-emerald-200/80">Всего лидов</p>
+                      <p className="text-[32px] font-bold leading-none text-white">{totals.total}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[11px] uppercase tracking-widest text-rose-200/80">Проблемные</p>
+                      <p className="text-[32px] font-bold leading-none text-rose-200">{totals.critical}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[11px] uppercase tracking-widest text-amber-200/80">Доля проблемных</p>
+                      <p className="text-[32px] font-bold leading-none text-amber-200">
+                        {totals.total > 0 ? Math.round((totals.critical / totals.total) * 100) : 0}%
                       </p>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
-                      Этап с максимальным количеством лидов среди этапов «В работе». Название и число берутся из распределения по этапам.
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="cursor-help">Следующий шаг: {centerBrief.focusShort}</p>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" sideOffset={8} className="max-w-[360px] leading-relaxed">
-                      Автоматическая рекомендация: если больше лидов без задач, фокус на задачах; если без менеджера, фокус на назначении.
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[11px] uppercase tracking-widest text-emerald-200/80">Комиссия</p>
+                      <p className="text-[32px] font-bold leading-none text-emerald-100">
+                        {formatUsd(totals.totalCommission)}
+                      </p>
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <p className="text-[11px] uppercase tracking-widest text-rose-200/80">Комиссия по проблемным</p>
+                      <p className="text-[28px] font-bold leading-none text-rose-200">
+                        {formatUsd(totals.criticalCommission)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="absolute bottom-2 left-8 flex items-end gap-2">
+            <div className="absolute bottom-14 left-8 flex items-end gap-2">
               {REJECTION_STAGES.map((stage) => {
                 const leads = leadsByStage[stage.id] ?? []
                 const baseCursor = cursorByStageId[stage.id] ?? 0
@@ -444,6 +580,7 @@ export function LeadsCardTableV2Dialog({
                       onSelect={setSelectedLeadId}
                       activeLeadId={activeLead?.id ?? null}
                       showControls={leads.length > 1}
+                      showStats={showStats}
                       compact
                     />
                   </div>
@@ -451,7 +588,7 @@ export function LeadsCardTableV2Dialog({
               })}
             </div>
 
-            <div className="absolute bottom-2 right-6 flex items-end gap-2">
+            <div className="absolute bottom-20 right-6 flex items-end gap-2">
               {SUCCESS_STAGES.map((stage) => {
                 const leads = leadsByStage[stage.id] ?? []
                 const baseCursor = cursorByStageId[stage.id] ?? 0
@@ -467,6 +604,7 @@ export function LeadsCardTableV2Dialog({
                       onSelect={setSelectedLeadId}
                       activeLeadId={activeLead?.id ?? null}
                       showControls={leads.length > 1}
+                      showStats={showStats}
                       compact
                     />
                   </div>
@@ -489,7 +627,22 @@ export function LeadsCardTableV2Dialog({
             </div>
 
             <aside className="absolute right-2 top-2 w-[300px] rounded-[6px] border border-emerald-300/40 bg-[#c7d8d2] px-4 py-3 text-slate-900 shadow-[0_10px_20px_rgba(0,0,0,0.28)]">
-              <p className="text-[14px] font-bold uppercase leading-none tracking-wide text-slate-500">РАСКЛАД</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[14px] font-bold uppercase leading-none tracking-wide text-slate-500">
+                  РАСКЛАД
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setHistoryOpen(true)}
+                  className="h-7 px-3 text-[12px] font-semibold border-emerald-300 bg-emerald-500 text-white hover:bg-emerald-400 hover:border-emerald-200 shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
+                >
+                  История отношений
+                </Button>
+              </div>
+              <p className="mt-1 text-[11px] font-medium text-slate-600">
+                Дата создания: {createdLabel}
+              </p>
               <div className="mt-3 rounded-[14px] border-2 border-indigo-200 bg-slate-100 px-3 py-3 text-center">
                 <p className="line-clamp-2 text-[18px] font-bold leading-tight text-slate-800">
                   {activeLead?.name ?? "—"}
@@ -499,46 +652,82 @@ export function LeadsCardTableV2Dialog({
                 </p>
               </div>
 
-              <div
-                className={cn(
-                  "mt-3 rounded-[12px] border-2 px-3 py-2.5",
-                  taskOk ? "border-emerald-400 bg-emerald-50/40" : "border-rose-400 bg-rose-50/60"
-                )}
-              >
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">Задача</p>
-                <p className={cn("text-[20px] font-bold leading-tight", taskOk ? "text-emerald-700" : "text-rose-700")}>
-                  {taskOk ? "Да" : "Нет"}
-                </p>
+              <div className="mt-3 grid grid-cols-3 gap-1.5">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={cn(
+                      "flex flex-col items-center gap-1 rounded-[10px] border-2 px-2 py-2 cursor-help",
+                      taskOk ? "border-emerald-400 bg-emerald-50/40" : "border-rose-400 bg-rose-50/60"
+                    )}>
+                      <CheckCircle2 className={cn("size-4", taskOk ? "text-emerald-600" : "text-rose-500")} />
+                      <span className={cn("text-[13px] font-bold leading-none", taskOk ? "text-emerald-700" : "text-rose-700")}>
+                        {taskOk ? "Да" : "Нет"}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6} className="text-sm">Задача</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={cn(
+                      "flex flex-col items-center gap-1 rounded-[10px] border-2 px-2 py-2 cursor-help",
+                      managerOk ? "border-emerald-400 bg-emerald-50/40" : "border-rose-400 bg-rose-50/60"
+                    )}>
+                      <UserCheck className={cn("size-4", managerOk ? "text-emerald-600" : "text-rose-500")} />
+                      <span className={cn("text-[13px] font-bold leading-none", managerOk ? "text-emerald-700" : "text-rose-700")}>
+                        {managerOk ? "Да" : "Нет"}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6} className="text-sm">
+                    Менеджер: {activeLead ? managerLabel(activeLead.managerId, managerNameById) : "—"}
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={cn(
+                      "flex flex-col items-center gap-1 rounded-[10px] border-2 px-2 py-2 cursor-help",
+                      overdue ? "border-rose-400 bg-rose-50/60" : "border-emerald-400 bg-emerald-50/40"
+                    )}>
+                      <Clock className={cn("size-4", overdue ? "text-rose-500" : "text-emerald-600")} />
+                      <span className={cn("text-[13px] font-bold leading-none", overdue ? "text-rose-700" : "text-emerald-700")}>
+                        {overdue ? "Да" : "Нет"}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6} className="text-sm">Просрочка по задаче</TooltipContent>
+                </Tooltip>
               </div>
 
-              <div
-                className={cn(
-                  "mt-3 rounded-[12px] border-2 px-3 py-2.5",
-                  managerOk ? "border-emerald-400 bg-emerald-50/40" : "border-rose-400 bg-rose-50/60"
-                )}
-              >
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">Менеджер</p>
-                <p className={cn("line-clamp-1 text-[19px] font-bold leading-tight", managerOk ? "text-emerald-700" : "text-rose-700")}>
-                  {activeLead ? managerLabel(activeLead.managerId, managerNameById) : "—"}
-                </p>
+              <div className="mt-2 flex items-baseline justify-between rounded-[10px] border border-indigo-100 bg-slate-100 px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Прогресс</p>
+                <p className="text-[15px] font-bold leading-none text-slate-800">{activityLabel}</p>
               </div>
 
-              <div className="mt-3 rounded-[12px] border-2 border-indigo-100 bg-slate-100 px-3 py-2.5">
-                <p className="cursor-help text-[12px] font-semibold uppercase tracking-wide text-slate-500" title="движение по воронке">
-                  Прогресс
-                </p>
-                <p className="text-[20px] font-bold leading-tight text-slate-800">
-                  {activityLabel}
-                </p>
-              </div>
-              <div className="mt-3 min-h-[76px] rounded-[12px] border-2 border-dashed border-slate-300/80 bg-slate-50/50 px-3 py-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Резерв под данные</p>
+              <div className="mt-2 flex items-baseline justify-between rounded-[10px] border border-dashed border-slate-300/80 bg-slate-50/50 px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Комиссия</p>
+                <p className="text-[15px] font-bold leading-none text-slate-800">{formatUsd(activeLeadCommission)}</p>
               </div>
             </aside>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="sm:max-w-2xl h-[50vh] max-h-[70vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>История отношений</DialogTitle>
+            <DialogDescription>
+              Раздел в разработке. Здесь появится хронология контактов по лиду.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 rounded-md border border-dashed border-slate-300/80 bg-slate-50/80" />
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
@@ -552,6 +741,7 @@ function StageDeckPile({
   onSelect,
   activeLeadId,
   showControls,
+  showStats,
   compact = false,
 }: {
   stageId: string
@@ -563,6 +753,7 @@ function StageDeckPile({
   onSelect: (leadId: string) => void
   activeLeadId: string | null
   showControls: boolean
+  showStats: boolean
   compact?: boolean
 }) {
   const cards = visibleLeadCards(leads, cursor)
@@ -570,10 +761,23 @@ function StageDeckPile({
   const hiddenLayers = Math.min(compact ? 7 : 10, hiddenCount)
   const deckTone = getDeckVisualState(stageId, leads)
 
+  const totalLeads = leads.length
+  const criticalLeads = leads.filter((lead) => getLeadProblemState(lead) === "critical").length
+  const overdueLeads = leads.filter((lead) => lead.taskOverdue).length
+  const columnCommission = leads.reduce((sum, lead) => sum + (lead.commissionUsd ?? 0), 0)
+
   const cardWidth = 95
   const cardHeight = 142
-  const pileHeight = 270
   const cardStep = 27
+  const pileHeight = hiddenLayers * 3 + 4 + cardHeight + 8
+
+  const columnId = LEAD_STAGE_COLUMN[stageId] ?? "in_progress"
+  const arrowColorClasses =
+    columnId === "rejection"
+      ? "border-sky-300 bg-sky-600"
+      : columnId === "success"
+        ? "border-amber-300 bg-amber-500"
+        : "border-emerald-300 bg-emerald-600"
 
   return (
     <>
@@ -583,14 +787,20 @@ function StageDeckPile({
             <button
               type="button"
               onClick={() => onStep(stageId, leads, -1)}
-              className="h-5 min-w-[32px] rounded border border-rose-300 bg-rose-600 px-1 text-[11px] font-bold text-white"
+              className={cn(
+                "h-5 min-w-[32px] rounded border px-1 text-[11px] font-bold text-white",
+                arrowColorClasses
+              )}
             >
               ◂♦
             </button>
             <button
               type="button"
               onClick={() => onStep(stageId, leads, 1)}
-              className="h-5 min-w-[32px] rounded border border-rose-300 bg-rose-600 px-1 text-[11px] font-bold text-white"
+              className={cn(
+                "h-5 min-w-[32px] rounded border px-1 text-[11px] font-bold text-white",
+                arrowColorClasses
+              )}
             >
               ♦▸
             </button>
@@ -603,14 +813,36 @@ function StageDeckPile({
         )}
       </div>
 
-      <div className={cn("mb-1 flex items-center justify-center", compact ? "h-8" : "h-5")}>
+      <div className={cn("mb-0.5 flex items-center justify-center", compact ? "h-8" : "h-5")}>
         <p className={cn("text-center font-bold tracking-wide text-white", compact ? "line-clamp-2 text-[11px]" : "text-[11px] uppercase")}>
           {stageLabel}
         </p>
       </div>
+
+      {!compact && showStats && (
+        <div className="mb-1 flex flex-col items-center gap-0.5 [text-shadow:_0_1px_3px_rgba(0,0,0,0.7)]">
+          <div className="flex items-center gap-2 text-[11px] font-semibold leading-none text-white">
+            <span className="text-white">Всего: {totalLeads}</span>
+            <span className="text-rose-300">Пробл: {criticalLeads}</span>
+          </div>
+          <span className={cn(
+            "rounded px-1.5 py-0.5 text-[10px] font-bold leading-none",
+            criticalLeads / Math.max(totalLeads, 1) > 0.5
+              ? "bg-rose-600 text-white"
+              : criticalLeads / Math.max(totalLeads, 1) > 0.25
+                ? "bg-amber-500 text-white"
+                : "bg-emerald-600 text-white"
+          )}>
+            {totalLeads > 0 ? Math.round((criticalLeads / totalLeads) * 100) : 0}% пробл.
+          </span>
+        </div>
+      )}
+
       {stageName && (
         <div className="mb-1 flex h-8 items-start justify-center">
-          <p className="line-clamp-2 text-center text-[11px] font-semibold leading-tight text-white">{stageName}</p>
+          <p className="line-clamp-2 text-center text-[11px] font-semibold leading-tight text-white">
+            {stageName}
+          </p>
         </div>
       )}
 
@@ -639,14 +871,15 @@ function StageDeckPile({
         {cards.map((lead, cardIndex) => (
           (() => {
             const isFrontCard = cardIndex === cards.length - 1
+            const isCritical = getLeadProblemState(lead) === "critical"
             return (
               <button
                 key={lead.id}
                 type="button"
                 onClick={() => onSelect(lead.id)}
                 className={cn(
-                  "absolute overflow-hidden rounded-[7px] border bg-white px-1.5 py-1.5 text-center shadow-[0_4px_10px_rgba(0,0,0,0.26)]",
-                  getLeadProblemState(lead) === "critical" ? "border-rose-300" : "border-slate-300",
+                  "absolute overflow-hidden rounded-[7px] border px-1.5 py-1.5 text-center shadow-[0_4px_10px_rgba(0,0,0,0.26)]",
+                  isCritical ? "border-rose-300 bg-[#FDF2F2]" : "border-slate-300 bg-white",
                   activeLeadId === lead.id && "ring-2 ring-slate-300"
                 )}
                 style={{
@@ -657,17 +890,24 @@ function StageDeckPile({
                   zIndex: 20 + cardIndex,
                 }}
               >
-                <span className="absolute left-1 right-1 top-1 rounded-[4px] border border-slate-200/80 bg-white/95 px-1 py-0.5 text-[12px] font-bold leading-none text-slate-900">
-                  <span className="block truncate">{lead.name ?? lead.id}</span>
-                </span>
+                {!isFrontCard && (
+                  <span className="absolute left-1 right-1 top-1 rounded-[4px] border border-slate-200/80 bg-white/95 px-1 py-0.5 text-[11.5px] font-bold leading-none text-slate-900">
+                    <span className="block truncate">{lead.name ?? lead.id}</span>
+                  </span>
+                )}
                 <p
                   className={cn(
-                    "mt-8 text-[16px] font-bold leading-tight text-slate-900",
+                    "mt-8 text-[15.5px] font-bold leading-tight text-slate-900",
                     isFrontCard ? "line-clamp-3 whitespace-normal break-words" : "line-clamp-2"
                   )}
                 >
                   {lead.name ?? lead.id}
                 </p>
+                {columnId === "in_progress" && lead.commissionUsd != null && (
+                  <p className="mt-1 text-[11px] font-semibold text-emerald-700">
+                    {formatUsd(lead.commissionUsd)}
+                  </p>
+                )}
               </button>
             )
           })()
@@ -680,6 +920,12 @@ function StageDeckPile({
           />
         )}
       </div>
+
+      {!compact && showStats && columnCommission > 0 && (
+        <div className="mt-0.5 text-center text-[13px] font-bold leading-none text-emerald-200 [text-shadow:_0_1px_3px_rgba(0,0,0,0.75)]">
+          {formatUsd(columnCommission)}
+        </div>
+      )}
     </>
   )
 }

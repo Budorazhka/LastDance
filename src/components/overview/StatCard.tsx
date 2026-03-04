@@ -32,32 +32,45 @@ export function StatCard({
   const isNegative = trendPercent && trendPercent < 0
 
   const TrendIcon = isPositive ? TrendingUp : (isNegative ? TrendingDown : Minus)
-  const trendBgColor = isPositive ? 'bg-emerald-600 text-white border-emerald-800' : (isNegative ? 'bg-rose-600 text-white border-rose-800' : 'bg-slate-200 text-black border-slate-400')
+  const trendBgColor = isPositive
+    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    : isNegative
+      ? 'bg-rose-50 text-rose-700 border-rose-200'
+      : 'bg-slate-50 text-slate-600 border-slate-200'
   const formattedPercent = trendPercent ? `${trendPercent > 0 ? '+' : ''}${trendPercent}%` : '0%'
 
   const cardContent = (
-    <Card className={cn("flex flex-col items-center justify-center p-2 sm:p-2.5 transition-transform hover:-translate-y-0.5 hover:shadow-lg border-2 border-slate-900 rounded-lg h-full min-h-[88px]", className)}>
+    <Card className={cn(
+      "flex flex-col items-center justify-center px-2.5 py-2 transition-transform hover:-translate-y-0.5 hover:shadow-md border border-slate-200 rounded-lg bg-white/90 h-full min-h-[64px]",
+      className
+    )}>
       <CardContent className="p-0 flex flex-col items-center justify-center text-center w-full h-full gap-0.5 sm:gap-1">
-        <div className="rounded-full bg-slate-900 p-1.5 sm:p-2 shadow-sm flex items-center justify-center shrink-0">
-          <Icon className="size-3 sm:size-4 text-white stroke-[2px]" />
+        <div className="rounded-md bg-slate-100 p-1.5 shadow-xs flex items-center justify-center shrink-0 text-slate-700">
+          <Icon className="size-3 stroke-[2.1px]" />
         </div>
 
         <div className="flex flex-col items-center w-full gap-0 min-w-0">
-          <span className="text-[10px] sm:text-xs font-bold text-black uppercase tracking-widest leading-tight">{label}</span>
+          <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 leading-tight">
+            {label}
+          </span>
 
-          <div className="text-base sm:text-lg font-black tracking-tighter text-black leading-none uppercase mt-0.5 mb-0">
+          <div className="text-sm sm:text-base font-semibold tracking-tight text-slate-900 leading-none mt-0.5 mb-0">
             {typeof value === 'number' ? value.toLocaleString('ru-RU') : value}
           </div>
 
           {typeof trendPercent === 'number' && (
-            <div className={cn("inline-flex items-center text-[9px] sm:text-[10px] font-black px-1 py-0.5 rounded border whitespace-nowrap shadow-sm", trendBgColor)}>
-              <TrendIcon className="mr-0.5 size-2 sm:size-2.5 stroke-[3px]" />
+            <div
+              className={cn("inline-flex items-center text-[9px] font-medium px-1.5 py-0.5 rounded-full border whitespace-nowrap", trendBgColor)}
+            >
+              <TrendIcon className="mr-0.5 size-2 stroke-[2.1px]" />
               {formattedPercent}
             </div>
           )}
 
           {description && (
-            <p className="text-[10px] sm:text-xs font-bold text-slate-800 uppercase tracking-wide leading-tight mt-0.5 truncate max-w-full">{description}</p>
+            <p className="text-[9px] sm:text-[10px] font-medium text-slate-500 leading-tight mt-0.5 truncate max-w-full">
+              {description}
+            </p>
           )}
         </div>
       </CardContent>
@@ -72,16 +85,21 @@ export function StatCard({
             {cardContent}
           </div>
         </TooltipTrigger>
-        <TooltipContent sideOffset={4} className="bg-white text-black px-2 py-1.5 border-2 border-black shadow-[3px_3px_0_0_#000] text-[10px] font-bold max-w-[180px] text-center rounded-md">
-          <div className="flex items-center justify-center gap-1.5 mb-1 pb-1 border-b-2 border-slate-200">
-            <div className={cn("flex items-center px-1 py-0.5 rounded border-2", trendBgColor)}>
-              <TrendIcon className="mr-0.5 size-3 stroke-[3px]" />
-              <span className="text-xs tracking-widest">
+        <TooltipContent
+          sideOffset={4}
+          className="bg-white text-slate-900 px-2.5 py-2 border border-slate-200 shadow-md text-[11px] font-medium max-w-[200px] text-center rounded-md"
+        >
+          <div className="flex items-center justify-center gap-1.5 mb-1 pb-1 border-b border-slate-200">
+            <div className={cn("flex items-center px-1.5 py-0.5 rounded-full border text-[11px]", trendBgColor)}>
+              <TrendIcon className="mr-1 size-3 stroke-[2.25px]" />
+              <span>
                 {formattedPercent}
               </span>
             </div>
           </div>
-          <p className="tracking-wide uppercase leading-tight select-none">{trendLabel}</p>
+          <p className="leading-tight select-none">
+            {trendLabel}
+          </p>
         </TooltipContent>
       </Tooltip>
     )

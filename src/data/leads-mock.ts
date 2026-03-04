@@ -132,8 +132,23 @@ function createMockLeads(): Lead[] {
     const managerId = managers[i % 6]
     const createdAt = d.toISOString()
     const updatedAt = i % 5 === 0 ? undefined : new Date(d.getTime() + 60 * 60 * 1000).toISOString()
-    const rejectionNoTask = LEAD_STAGE_COLUMN[stageId] === 'rejection'
-      && stageId !== 'no_answer_1' && stageId !== 'no_answer_2'
+    const rejectionNoTask =
+      LEAD_STAGE_COLUMN[stageId] === 'rejection' &&
+      stageId !== 'no_answer_1' &&
+      stageId !== 'no_answer_2'
+    const hasTask = rejectionNoTask ? false : i % 3 !== 0
+    const taskOverdue = hasTask && i % 7 === 0
+
+    const baseCommission =
+      500 + (i % 15) * 150 + (source === 'rent' ? 300 : source === 'ad_campaigns' ? 200 : 0)
+    const stageMultiplier =
+      LEAD_STAGE_COLUMN[stageId] === 'success'
+        ? 1.6
+        : LEAD_STAGE_COLUMN[stageId] === 'in_progress'
+          ? 1
+          : 0.4
+    const commissionUsd = Math.round(baseCommission * stageMultiplier)
+
     leads.push({
       id: `lead-${i + 1}`,
       name: `${MOCK_NAMES[i % MOCK_NAMES.length]}`,
@@ -142,7 +157,9 @@ function createMockLeads(): Lead[] {
       managerId,
       createdAt,
       updatedAt,
-      hasTask: rejectionNoTask ? false : i % 3 !== 0,
+      hasTask,
+      taskOverdue,
+      commissionUsd,
       channel: channels[i % 4],
     })
   }
