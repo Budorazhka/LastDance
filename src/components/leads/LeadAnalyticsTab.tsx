@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { User, Users, LayoutGrid } from 'lucide-react'
+import { User, Users, LayoutGrid, LockKeyhole } from 'lucide-react'
 import { useLeads } from '@/context/LeadsContext'
 import { LEAD_STAGES } from '@/data/leads-mock'
 import type { LeadSource } from '@/types/leads'
@@ -9,9 +9,18 @@ import { getAnalyticsData } from '@/lib/mock/analytics-network'
 import { ConversionOverviewChart, FunnelKanban } from '@/components/analytics-network'
 import { LeadsCardTableDialog } from '@/components/leads/LeadsCardTableDialog'
 import { LeadsCardTableV2Dialog } from '@/components/leads/LeadsCardTableV2Dialog'
+import { LeadsSecretDistributionDialog } from '@/components/leads/LeadsSecretDistributionDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -67,8 +76,35 @@ export function LeadAnalyticsTab() {
   const [selectedManagerId, setSelectedManagerId] = useState<string>('_all')
   const [cardTableOpen, setCardTableOpen] = useState(false)
   const [cardTableV2Open, setCardTableV2Open] = useState(false)
+  const [secretUnlocked, setSecretUnlocked] = useState(false)
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [secretDialogOpen, setSecretDialogOpen] = useState(false)
+  const [passwordValue, setPasswordValue] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const { state } = useLeads()
   const { leadPool, leadManagers } = state
+
+  const openSecretSection = () => {
+    if (secretUnlocked) {
+      setSecretDialogOpen(true)
+      return
+    }
+    setPasswordValue('')
+    setPasswordError('')
+    setPasswordDialogOpen(true)
+  }
+
+  const submitSecretPassword = () => {
+    if (passwordValue.trim() === '1488') {
+      setSecretUnlocked(true)
+      setPasswordDialogOpen(false)
+      setSecretDialogOpen(true)
+      setPasswordValue('')
+      setPasswordError('')
+      return
+    }
+    setPasswordError('Неверный пароль. Доступ закрыт.')
+  }
 
   /** Лиды для текущего среза: вся сеть или один менеджер */
   const filteredLeads = useMemo(() => {
@@ -179,6 +215,14 @@ export function LeadAnalyticsTab() {
             <LayoutGrid className="size-4" />
             Карточный стол лидов v2
           </Button>
+          <Button
+            variant="outline"
+            className="gap-2 border-[#9f7a31] bg-[#f8f0df] text-[#4f3400] hover:bg-[#f3e4c7]"
+            onClick={openSecretSection}
+          >
+            <LockKeyhole className="size-4" />
+            Режим руководителя
+          </Button>
         </CardContent>
       </Card>
 
@@ -197,6 +241,52 @@ export function LeadAnalyticsTab() {
         selectedManagerId={selectedManagerId}
         onSelectedManagerIdChange={setSelectedManagerId}
       />
+
+      <Dialog
+        open={passwordDialogOpen}
+        onOpenChange={(open) => {
+          setPasswordDialogOpen(open)
+          if (!open) {
+            setPasswordValue('')
+            setPasswordError('')
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Режим руководителя</DialogTitle>
+            <DialogDescription>
+              Введите пароль, чтобы открыть панель управления распределением заявок.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <Label htmlFor="secret-password">Пароль</Label>
+            <Input
+              id="secret-password"
+              type="password"
+              value={passwordValue}
+              onChange={(event) => {
+                setPasswordValue(event.target.value)
+                if (passwordError) setPasswordError('')
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') submitSecretPassword()
+              }}
+              autoFocus
+              placeholder="Введите пароль"
+            />
+            {passwordError && <p className="text-sm font-medium text-rose-600">{passwordError}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+                Отмена
+              </Button>
+              <Button onClick={submitSecretPassword}>Войти</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <LeadsSecretDistributionDialog open={secretDialogOpen} onOpenChange={setSecretDialogOpen} />
 
       {/* Воронка продаж — те же этапы CRM, что и в канбане на странице партнёра */}
       <section>

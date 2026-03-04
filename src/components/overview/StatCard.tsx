@@ -1,5 +1,4 @@
 import type { LucideIcon } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -28,76 +27,57 @@ export function StatCard({
   trendLabel,
   className
 }: StatCardProps) {
-  const isPositive = trendPercent && trendPercent > 0
-  const isNegative = trendPercent && trendPercent < 0
+  const hasTrend = typeof trendPercent === 'number'
+  const numericTrend = hasTrend ? trendPercent : 0
+  const isPositive = numericTrend > 0
+  const isNegative = numericTrend < 0
 
   const TrendIcon = isPositive ? TrendingUp : (isNegative ? TrendingDown : Minus)
-  const trendBgColor = isPositive
-    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  const trendTextColor = isPositive
+    ? 'text-emerald-600'
     : isNegative
-      ? 'bg-rose-50 text-rose-700 border-rose-200'
-      : 'bg-slate-50 text-slate-600 border-slate-200'
-  const formattedPercent = trendPercent ? `${trendPercent > 0 ? '+' : ''}${trendPercent}%` : '0%'
+      ? 'text-rose-600'
+      : 'text-slate-500'
+  const formattedPercent = hasTrend ? `${numericTrend > 0 ? '+' : ''}${numericTrend}%` : null
 
   const cardContent = (
-    <Card className={cn(
-      "flex flex-col items-center justify-center px-2 py-1.5 transition-transform hover:-translate-y-0.5 hover:shadow-md border border-slate-200 rounded-lg bg-white/90 h-full min-h-[56px]",
-      className
-    )}>
-      <CardContent className="p-0 flex flex-col items-center justify-center text-center w-full h-full gap-0.5 sm:gap-1">
-        <div className="rounded-md bg-slate-100 p-1.5 shadow-xs flex items-center justify-center shrink-0 text-slate-700">
-          <Icon className="size-[18px] stroke-[2.2px]" />
-        </div>
+    <div className={cn('flex h-full min-h-[62px] flex-col items-center justify-center gap-1 text-center', className)}>
+      <div className="flex min-w-0 items-center justify-center gap-1.5 text-[11px] font-medium text-slate-500">
+        <Icon className="size-3.5 shrink-0 stroke-[2.1px] text-slate-400" />
+        <span className="truncate">{label}</span>
+      </div>
 
-        <div className="flex flex-col items-center w-full gap-0 min-w-0">
-          <span className="text-[11px] sm:text-[12px] font-medium text-slate-600 leading-tight">
-            {label}
-          </span>
+      <div className="truncate text-[28px] font-semibold leading-none tracking-tight text-slate-900 sm:text-[30px]">
+        {typeof value === 'number' ? value.toLocaleString('ru-RU') : value}
+      </div>
 
-          <div className="text-base sm:text-lg font-semibold tracking-tight text-slate-900 leading-none mt-0.5 mb-0">
-            {typeof value === 'number' ? value.toLocaleString('ru-RU') : value}
-          </div>
-
-          {typeof trendPercent === 'number' && (
-            <div
-              className={cn("inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border whitespace-nowrap", trendBgColor)}
-            >
-              <TrendIcon className="mr-0.5 size-[11px] stroke-[2.1px]" />
-              {formattedPercent}
-            </div>
-          )}
-
-          {description && (
-            <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 leading-tight mt-0.5 truncate max-w-full">
-              {description}
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      {description && (
+        <p className="truncate text-[10px] font-medium leading-none text-slate-400">
+          {description}
+        </p>
+      )}
+    </div>
   )
 
-  if (typeof trendPercent === 'number' && trendLabel) {
+  if (hasTrend && trendLabel && formattedPercent) {
     return (
       <Tooltip delayDuration={100}>
         <TooltipTrigger asChild>
-          <div className="h-full cursor-help block w-full">
+          <div className="block h-full w-full cursor-help">
             {cardContent}
           </div>
         </TooltipTrigger>
         <TooltipContent
-          sideOffset={4}
-          className="bg-white text-slate-900 px-2.5 py-2 border border-slate-200 shadow-md text-[11px] font-medium max-w-[200px] text-center rounded-md"
+          sideOffset={6}
+          className="max-w-[220px] rounded-md border border-slate-200 bg-white px-2.5 py-2 text-center text-[11px] font-medium text-slate-900 shadow-md"
         >
-          <div className="flex items-center justify-center gap-1.5 mb-1 pb-1 border-b border-slate-200">
-            <div className={cn("flex items-center px-1.5 py-0.5 rounded-full border text-[11px]", trendBgColor)}>
-              <TrendIcon className="mr-1 size-3 stroke-[2.25px]" />
-              <span>
-                {formattedPercent}
-              </span>
-            </div>
+          <div className="mb-1.5 flex items-center justify-center border-b border-slate-200 pb-1.5">
+            <span className={cn('inline-flex items-center gap-1.5 text-[22px] font-bold leading-none', trendTextColor)}>
+              <TrendIcon className="size-5 shrink-0 stroke-[2.5px]" />
+              {formattedPercent}
+            </span>
           </div>
-          <p className="leading-tight select-none">
+          <p className="text-[11px] leading-tight text-slate-500 select-none">
             {trendLabel}
           </p>
         </TooltipContent>
@@ -105,5 +85,5 @@ export function StatCard({
     )
   }
 
-  return <div className="h-full block w-full">{cardContent}</div>
+  return <div className="block h-full w-full">{cardContent}</div>
 }

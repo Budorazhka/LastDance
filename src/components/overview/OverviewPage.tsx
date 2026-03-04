@@ -46,9 +46,6 @@ export function OverviewPage() {
                 </button>
               ))}
             </div>
-            {period !== 'allTime' && (
-              <span className="text-sm text-slate-500">Динамика к прошлому периоду</span>
-            )}
           </div>
         </div>
 

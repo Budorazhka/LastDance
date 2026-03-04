@@ -50,38 +50,62 @@ const COUNTRY_ID_BY_ENGLISH_NAME: Record<string, CountryId> = {
   Turkey: 'turkey',
 }
 
-const COUNTRY_PALETTE: Record<
-  CountryId,
-  { base: string; hover: string; focus: string; stroke: string }
-> = {
-  georgia: {
-    base: '#88f0b7',
-    hover: '#5be39c',
-    focus: '#22c55e',
-    stroke: '#15803d',
-  },
-  thailand: {
-    base: '#ffd86f',
-    hover: '#fbbf24',
-    focus: '#f59e0b',
-    stroke: '#b45309',
-  },
-  turkey: {
-    base: '#fda4af',
-    hover: '#fb7185',
-    focus: '#f43f5e',
-    stroke: '#be123c',
-  },
-}
+const MAP_OCEAN_COLOR = '#0b1220'
+const MAP_LAND_BASE = '#c7d0de'
+const MAP_LAND_STROKE = 'rgba(120, 136, 158, 0.42)'
+const MAP_HEAT_LOW = '#94b7ff'
+const MAP_HEAT_HIGH = '#275cd9'
+const CITY_BUBBLE_FILL = 'rgba(59, 130, 246, 0.28)'
+const CITY_BUBBLE_STROKE = 'rgba(96, 165, 250, 0.92)'
+const CITY_BUBBLE_INNER = 'rgba(191, 219, 254, 0.95)'
+const CITY_BUBBLE_ACTIVE = 'rgba(99, 102, 241, 0.75)'
 
 function isCountryId(value: string): value is CountryId {
   return COUNTRY_CONFIG.some((country) => country.id === value)
 }
 
-function getMarkerSize(partnersCount: number): number {
-  if (partnersCount >= 10) return 10.6
-  if (partnersCount >= 4) return 9.2
-  return 7.8
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value))
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const normalized = hex.replace('#', '')
+  const value = normalized.length === 3
+    ? normalized.split('').map((part) => part + part).join('')
+    : normalized
+  const parsed = Number.parseInt(value, 16)
+  const r = (parsed >> 16) & 255
+  const g = (parsed >> 8) & 255
+  const b = parsed & 255
+  return [r, g, b]
+}
+
+function mixHexColor(fromHex: string, toHex: string, amount: number): string {
+  const t = clamp01(amount)
+  const [r1, g1, b1] = hexToRgb(fromHex)
+  const [r2, g2, b2] = hexToRgb(toHex)
+  const r = Math.round(r1 + (r2 - r1) * t)
+  const g = Math.round(g1 + (g2 - g1) * t)
+  const b = Math.round(b1 + (b2 - b1) * t)
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+function getCountryHeatColor(value: number, maxValue: number): string {
+  if (maxValue <= 0 || value <= 0) return MAP_LAND_BASE
+  const normalized = Math.sqrt(value / maxValue)
+  return mixHexColor(MAP_HEAT_LOW, MAP_HEAT_HIGH, normalized)
+}
+
+function getCityBubbleRadius(
+  partnersCount: number,
+  revenue: number,
+  maxPartners: number,
+  maxRevenue: number
+): number {
+  const partnersWeight = maxPartners > 0 ? partnersCount / maxPartners : 0
+  const revenueWeight = maxRevenue > 0 ? revenue / maxRevenue : 0
+  const score = clamp01(partnersWeight * 0.55 + revenueWeight * 0.45)
+  return 6 + score * 10
 }
 
 function formatMoney(value: number): string {
@@ -115,6 +139,7 @@ export function GlobeMap({ cities }: GlobeMapProps) {
   )
   const [selectedCityId, setSelectedCityId] = useState<string | null>(null)
   const [hoveredCityId, setHoveredCityId] = useState<string | null>(null)
+  const [hoveredCountryId, setHoveredCountryId] = useState<CountryId | null>(null)
 
   const focusedCountry = useMemo(() => {
     return (
@@ -141,6 +166,42 @@ export function GlobeMap({ cities }: GlobeMapProps) {
 
   const panelCity = selectedCity ?? hoveredCity ?? focusedCountryCities[0] ?? null
 
+  const countryStatsById = useMemo(() => {
+    const initial: Record<CountryId, { cityCount: number; referralsCount: number; revenue: number }> = {
+      georgia: { cityCount: 0, referralsCount: 0, revenue: 0 },
+      thailand: { cityCount: 0, referralsCount: 0, revenue: 0 },
+      turkey: { cityCount: 0, referralsCount: 0, revenue: 0 },
+    }
+
+    cities.forEach((city) => {
+      if (!isCountryId(city.countryId)) return
+      initial[city.countryId].cityCount += 1
+      initial[city.countryId].referralsCount += city.partnersCount
+      initial[city.countryId].revenue += city.totalRevenue
+    })
+
+    return initial
+  }, [cities])
+
+  const maxCountryRevenue = useMemo(
+    () =>
+      Math.max(
+        ...Object.values(countryStatsById).map((stat) => stat.revenue),
+        0
+      ),
+    [countryStatsById]
+  )
+
+  const maxCityPartners = useMemo(
+    () => Math.max(...cities.map((city) => city.partnersCount), 0),
+    [cities]
+  )
+
+  const maxCityRevenue = useMemo(
+    () => Math.max(...cities.map((city) => city.totalRevenue), 0),
+    [cities]
+  )
+
   const networkStats = useMemo(() => {
     return {
       cityCount: cities.length,
@@ -160,9 +221,15 @@ export function GlobeMap({ cities }: GlobeMapProps) {
   const mapCenter: [number, number] = selectedCity?.coordinates ?? focusedCountry.center
   const mapZoom = selectedCity ? CITY_FOCUS_ZOOM : focusedCountry.zoom
   const activeLabelCityId = hoveredCityId ?? selectedCityId
+  const hoveredCountryStats = hoveredCountryId ? countryStatsById[hoveredCountryId] : null
+  const hoveredCountryName =
+    hoveredCountryId
+      ? COUNTRY_CONFIG.find((country) => country.id === hoveredCountryId)?.name ?? null
+      : null
 
   const focusCountry = (countryId: CountryId) => {
     setFocusedCountryId(countryId)
+    setHoveredCountryId(null)
     setHoveredCityId(null)
     setSelectedCityId((currentCityId) => {
       if (!currentCityId) return null
@@ -215,19 +282,30 @@ export function GlobeMap({ cities }: GlobeMapProps) {
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {countryOptions.map((country) => {
               const isActive = country.id === focusedCountry.id
+              const countryStats = countryStatsById[country.id]
               return (
                 <button
                   key={country.id}
                   type="button"
                   onClick={() => focusCountry(country.id)}
                   className={[
-                    'rounded-full border px-4 py-2 text-base font-semibold transition',
+                    'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition',
                     isActive
                       ? 'border-slate-900 bg-slate-900 text-white'
                       : 'border-slate-300 bg-white text-slate-700 hover:border-slate-500 hover:bg-slate-100',
                   ].join(' ')}
                 >
-                  {country.name}
+                  <span>{country.name}</span>
+                  <span
+                    className={[
+                      'rounded-full border px-2 py-0.5 text-xs font-semibold',
+                      isActive
+                        ? 'border-slate-500 bg-slate-800 text-slate-100'
+                        : 'border-slate-300 bg-slate-100 text-slate-700',
+                    ].join(' ')}
+                  >
+                    • {countryStats.referralsCount}
+                  </span>
                 </button>
               )
             })}
@@ -235,18 +313,24 @@ export function GlobeMap({ cities }: GlobeMapProps) {
             <button
               type="button"
               onClick={() => {
+                setHoveredCountryId(null)
                 setHoveredCityId(null)
                 setSelectedCityId(null)
               }}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-base font-semibold text-slate-700 transition hover:bg-slate-100"
+              className="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             >
               Сбросить фокус
             </button>
           </div>
 
-          <div className="relative h-[560px] overflow-hidden rounded-2xl border border-slate-300 bg-[radial-gradient(circle_at_18%_20%,#eaf8ff_0%,#9dd8ff_38%,#4ea8f4_68%,#2a84db_100%)]">
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(0deg,rgba(255,255,255,0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[length:44px_44px]" />
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.06)_48%,rgba(255,255,255,0)_80%)]" />
+          <div
+            className="relative h-[560px] overflow-hidden rounded-2xl border border-slate-300"
+            style={{
+              background: `radial-gradient(circle at 18% 24%, #162236 0%, ${MAP_OCEAN_COLOR} 58%, #0a101d 100%)`,
+            }}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(0deg,rgba(203,213,225,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(203,213,225,0.06)_1px,transparent_1px)] bg-[length:56px_56px]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_55%_0%,rgba(148,163,184,0.14)_0%,rgba(15,23,42,0)_55%)]" />
 
             <ComposableMap
               projection="geoMercator"
@@ -270,47 +354,58 @@ export function GlobeMap({ cities }: GlobeMapProps) {
                         ''
                       const geoCountryId = COUNTRY_ID_BY_ENGLISH_NAME[geoName]
                       const isFocusedCountry = geoCountryId === focusedCountry.id
-                      const countryColors = geoCountryId ? COUNTRY_PALETTE[geoCountryId] : null
-                      const hasNetworkCity = geoCountryId ? availableCountryIds.includes(geoCountryId) : false
+                      const countryStats = geoCountryId ? countryStatsById[geoCountryId] : null
+                      const hasNetworkCity = Boolean(countryStats && countryStats.cityCount > 0)
+                      const heatFill =
+                        hasNetworkCity && countryStats
+                          ? getCountryHeatColor(countryStats.revenue, maxCountryRevenue)
+                          : MAP_LAND_BASE
+                      const hoverFill =
+                        hasNetworkCity
+                          ? mixHexColor(heatFill, '#d8e4ff', 0.24)
+                          : '#d8e0ec'
+                      const pressedFill =
+                        hasNetworkCity
+                          ? mixHexColor(heatFill, '#f8fbff', 0.1)
+                          : '#cfd8e4'
+                      const countryName =
+                        geoCountryId
+                          ? COUNTRY_CONFIG.find((country) => country.id === geoCountryId)?.name ?? geoName
+                          : geoName
 
                       return (
                         <Geography
                           key={geo.rsmKey}
                           geography={geo}
-                          stroke={
-                            hasNetworkCity && countryColors
-                              ? countryColors.stroke
-                              : isFocusedCountry
-                                ? '#0f172a'
-                                : '#64748b'
+                          onMouseEnter={() => setHoveredCountryId(hasNetworkCity && geoCountryId ? geoCountryId : null)}
+                          onMouseLeave={() =>
+                            setHoveredCountryId((currentCountryId) =>
+                              currentCountryId === geoCountryId ? null : currentCountryId
+                            )
                           }
-                          strokeWidth={isFocusedCountry ? 1.2 : hasNetworkCity ? 0.9 : 0.35}
+                          stroke={isFocusedCountry ? 'rgba(148, 163, 184, 0.9)' : MAP_LAND_STROKE}
+                          strokeWidth={isFocusedCountry ? 1.1 : hasNetworkCity ? 0.82 : 0.56}
                           style={{
                             default: {
-                              fill:
-                                hasNetworkCity && countryColors
-                                  ? isFocusedCountry
-                                    ? countryColors.focus
-                                    : countryColors.base
-                                  : '#e2e8f0',
+                              fill: heatFill,
                               outline: 'none',
                             },
                             hover: {
-                              fill:
-                                hasNetworkCity && countryColors
-                                  ? countryColors.hover
-                                  : '#cbd5e1',
+                              fill: hoverFill,
                               outline: 'none',
                             },
                             pressed: {
-                              fill:
-                                hasNetworkCity && countryColors
-                                  ? countryColors.focus
-                                  : '#94a3b8',
+                              fill: pressedFill,
                               outline: 'none',
                             },
                           }}
-                        />
+                        >
+                          {hasNetworkCity && countryStats && (
+                            <title>
+                              {`${countryName}\nВыручка: ${formatMoney(countryStats.revenue)}\nРефералов: ${countryStats.referralsCount}`}
+                            </title>
+                          )}
+                        </Geography>
                       )
                     })
                   }
@@ -323,14 +418,30 @@ export function GlobeMap({ cities }: GlobeMapProps) {
                   const showLabel = activeLabelCityId === city.id
                   const zoomCompensation = 1 / mapZoom
                   const labelOffset = city.labelOffset ?? ([12, -10] as [number, number])
-                  const markerSize = getMarkerSize(city.partnersCount) * zoomCompensation
-                  const markerColor = isSelected
-                    ? '#f97316'
+                  const markerRadius =
+                    getCityBubbleRadius(
+                      city.partnersCount,
+                      city.totalRevenue,
+                      maxCityPartners,
+                      maxCityRevenue
+                    ) * zoomCompensation
+                  const isTopCity =
+                    city.totalRevenue >= maxCityRevenue * 0.82 ||
+                    city.partnersCount >= maxCityPartners * 0.82
+                  const bubbleFill = isSelected
+                    ? CITY_BUBBLE_ACTIVE
                     : isHovered
-                      ? '#0ea5e9'
+                      ? 'rgba(59, 130, 246, 0.42)'
                       : isFocused
-                        ? '#0284c7'
-                        : '#475569'
+                        ? CITY_BUBBLE_FILL
+                        : 'rgba(148, 163, 184, 0.22)'
+                  const bubbleStroke = isSelected
+                    ? 'rgba(165, 180, 252, 1)'
+                    : isHovered
+                      ? 'rgba(125, 211, 252, 0.98)'
+                      : isFocused
+                        ? CITY_BUBBLE_STROKE
+                        : 'rgba(148, 163, 184, 0.72)'
 
                   return (
                     <Marker key={city.id} coordinates={city.coordinates}>
@@ -345,21 +456,42 @@ export function GlobeMap({ cities }: GlobeMapProps) {
                         }}
                         onClick={() => focusCity(city)}
                       >
+                        {isTopCity && (
+                          <circle
+                            r={markerRadius * 1.22}
+                            fill="none"
+                            stroke="rgba(129, 140, 248, 0.65)"
+                            strokeWidth={1.35 * zoomCompensation}
+                          >
+                            <animate
+                              attributeName="r"
+                              values={`${markerRadius * 1.08};${markerRadius * 1.6};${markerRadius * 1.08}`}
+                              dur="2.4s"
+                              repeatCount="indefinite"
+                            />
+                            <animate
+                              attributeName="opacity"
+                              values="0.9;0.2;0.9"
+                              dur="2.4s"
+                              repeatCount="indefinite"
+                            />
+                          </circle>
+                        )}
                         {(isSelected || isHovered) && (
                           <circle
-                            r={(getMarkerSize(city.partnersCount) + 7) * zoomCompensation}
-                            fill={isSelected ? 'rgba(249, 115, 22, 0.24)' : 'rgba(14, 165, 233, 0.22)'}
+                            r={markerRadius * 1.65}
+                            fill={isSelected ? 'rgba(129, 140, 248, 0.28)' : 'rgba(56, 189, 248, 0.2)'}
                           />
                         )}
                         <circle
-                          r={markerSize}
-                          fill={markerColor}
-                          stroke="#ffffff"
-                          strokeWidth={1.5 * zoomCompensation}
+                          r={markerRadius}
+                          fill={bubbleFill}
+                          stroke={bubbleStroke}
+                          strokeWidth={1.7 * zoomCompensation}
                         />
                         <circle
-                          r={(getMarkerSize(city.partnersCount) - 2.2) * zoomCompensation}
-                          fill="rgba(255,255,255,0.35)"
+                          r={Math.max(markerRadius * 0.48, 1.8)}
+                          fill={CITY_BUBBLE_INNER}
                         />
 
                         {showLabel && (
@@ -370,8 +502,8 @@ export function GlobeMap({ cities }: GlobeMapProps) {
                               width={126 * zoomCompensation}
                               height={38 * zoomCompensation}
                               rx={9 * zoomCompensation}
-                              fill="rgba(255,255,255,0.95)"
-                              stroke="rgba(71,85,105,0.35)"
+                              fill="rgba(15, 23, 42, 0.92)"
+                              stroke="rgba(148, 163, 184, 0.45)"
                               strokeWidth={1 * zoomCompensation}
                             />
                             <text
@@ -380,7 +512,7 @@ export function GlobeMap({ cities }: GlobeMapProps) {
                               style={{
                                 fontSize: `${11.5 * zoomCompensation}px`,
                                 fontWeight: 700,
-                                fill: '#0f172a',
+                                fill: '#f8fafc',
                               }}
                             >
                               {city.name}
@@ -391,7 +523,7 @@ export function GlobeMap({ cities }: GlobeMapProps) {
                               style={{
                                 fontSize: `${10 * zoomCompensation}px`,
                                 fontWeight: 600,
-                                fill: '#334155',
+                                fill: '#bfdbfe',
                               }}
                             >
                               {city.partnersCount} рефералов
@@ -405,7 +537,15 @@ export function GlobeMap({ cities }: GlobeMapProps) {
               </ZoomableGroup>
             </ComposableMap>
 
-            <div className="pointer-events-none absolute bottom-3 left-3 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs text-slate-700 shadow">
+            {hoveredCountryStats && hoveredCountryName && (
+              <div className="pointer-events-none absolute right-3 top-3 rounded-lg border border-slate-500/50 bg-slate-900/90 px-3 py-2 text-xs text-slate-100 shadow-xl backdrop-blur-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">{hoveredCountryName}</p>
+                <p className="mt-1 text-sm font-semibold">{formatMoney(hoveredCountryStats.revenue)}</p>
+                <p className="text-[11px] text-slate-300">{hoveredCountryStats.referralsCount} рефералов</p>
+              </div>
+            )}
+
+            <div className="pointer-events-none absolute bottom-3 left-3 rounded-xl border border-slate-500/50 bg-slate-900/80 px-3 py-2 text-xs text-slate-200 shadow-lg">
               Наведите на город для подсветки. Клик выбирает, повторный клик открывает страницу.
             </div>
           </div>
@@ -456,11 +596,13 @@ export function GlobeMap({ cities }: GlobeMapProps) {
                   key={city.id}
                   type="button"
                   onClick={() => focusCity(city)}
+                  onDoubleClick={() => navigate(`/city/${city.id}`)}
+                  title="Клик — выбрать город. Повторный клик или двойной клик — открыть аналитику."
                   className={[
-                    'w-full rounded-2xl border px-3 py-3 text-left transition',
+                    'group w-full rounded-2xl border px-3 py-3 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500',
                     isActive
-                      ? 'border-slate-900 bg-slate-900 text-white'
-                      : 'border-slate-200 bg-white hover:bg-slate-100',
+                      ? 'border-slate-900 bg-slate-900 text-white shadow-[0_8px_18px_rgba(15,23,42,0.33)]'
+                      : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-400 hover:bg-slate-50 hover:shadow-md',
                   ].join(' ')}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -474,13 +616,21 @@ export function GlobeMap({ cities }: GlobeMapProps) {
                       >
                         {city.partnersCount} рефералов
                       </p>
+                      <p
+                        className={[
+                          'mt-0.5 text-[11px] leading-none',
+                          isActive ? 'text-slate-400' : 'text-slate-500',
+                        ].join(' ')}
+                      >
+                        Клик — выбрать, еще клик — открыть
+                      </p>
                     </div>
                     <div
                       className={[
-                        'shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold',
+                        'shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold transition',
                         isActive
                           ? 'border-slate-500 text-slate-200'
-                          : 'border-blue-300 bg-blue-50 text-blue-700',
+                          : 'border-blue-300 bg-blue-50 text-blue-700 group-hover:border-blue-400 group-hover:bg-blue-100',
                       ].join(' ')}
                     >
                       {formatMoney(city.totalRevenue)}

@@ -163,6 +163,30 @@ function createMockLeads(): Lead[] {
       channel: channels[i % 4],
     })
   }
+
+  // Добавляем дополнительный пул "Новый лид" без менеджера для ручного распределения.
+  const extraDistributionDeckLeads = 14
+  for (let j = 0; j < extraDistributionDeckLeads; j++) {
+    const d = new Date(now)
+    d.setMinutes(d.getMinutes() - j * 9)
+    const source = sources[(j + 1) % 4]
+    const createdAt = d.toISOString()
+
+    leads.push({
+      id: `lead-${leads.length + 1}`,
+      name: `${MOCK_NAMES[(j + 5) % MOCK_NAMES.length]}`,
+      source,
+      stageId: 'new',
+      managerId: null,
+      createdAt,
+      updatedAt: undefined,
+      hasTask: false,
+      taskOverdue: false,
+      commissionUsd: 1800 + j * 650,
+      channel: channels[(j + 2) % 4],
+    })
+  }
+
   return leads
 }
 
