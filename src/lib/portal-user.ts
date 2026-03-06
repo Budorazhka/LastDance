@@ -6,10 +6,9 @@ export function getCurrentPortalUser(): PortalUser | null {
   return PORTAL_USERS.find((u) => u.id === CURRENT_PORTAL_USER_ID) ?? null
 }
 
-/** Есть ли у текущего пользователя доступ к админке лидов (директор или РОП) */
+/** Есть ли у текущего пользователя доступ к админке лидов; открытый доступ (без проверки роли) */
 export function hasLeadAdminAccess(): boolean {
-  const user = getCurrentPortalUser()
-  return user != null && (user.leadAdminRole === 'director' || user.leadAdminRole === 'rop')
+  return true
 }
 
 /** Является ли текущий пользователь директором (полный доступ) */
