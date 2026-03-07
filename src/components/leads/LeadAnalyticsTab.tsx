@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { User, Users } from 'lucide-react'
 import { useLeads } from '@/context/LeadsContext'
-import { LEAD_STAGES } from '@/data/leads-mock'
+import { LEAD_STAGES, LEAD_STAGE_COLUMN } from '@/data/leads-mock'
 import type { LeadSource } from '@/types/leads'
 import type { AnalyticsPeriod } from '@/types/analytics'
 import type { FunnelBoard, FunnelColumn, FunnelStage } from '@/types/analytics'
@@ -155,8 +155,72 @@ export function LeadAnalyticsTab() {
         ? 'Не назначен'
         : getManagerName(selectedManagerId)
 
+  /** KPI для дашборда: по воронке или по filteredLeads */
+  const kpiTotal = salesFunnel?.totalCount ?? filteredLeads.length
+  const kpiClosed = salesFunnel?.closedCount ?? filteredLeads.filter((l) => l.stageId === 'deal').length
+  const kpiInProgress = salesFunnel?.activeCount ?? filteredLeads.length - kpiClosed
+  const kpiConversion = kpiTotal > 0 ? Math.round((kpiClosed / kpiTotal) * 100) : 0
+
+  /** Сводка по каждому менеджеру: всего, в работе, закрыто, отказ, конверсия %, место в рейтинге */
+  const managerStats = useMemo(() => {
+    const list: Array<{
+      managerId: string
+      name: string
+      total: number
+      inProgress: number
+      closed: number
+      rejection: number
+      conversionPct: number
+      goodPct: number
+      badPct: number
+    }> = []
+    managerIds.forEach((mid) => {
+      const row = managerStageCounts[mid] ?? {}
+      let total = 0
+      let closed = 0
+      let rejection = 0
+      LEAD_STAGES.forEach((s) => {
+        const c = row[s.id] ?? 0
+        total += c
+        if (s.id === 'deal') closed = c
+        if (LEAD_STAGE_COLUMN[s.id] === 'rejection') rejection += c
+      })
+      const inProgress = total - closed - rejection
+      const conversionPct = total > 0 ? Math.round((closed / total) * 100) : 0
+      const goodPct = total > 0 ? Math.round((closed / total) * 100) : 0
+      const badPct = total > 0 ? Math.round((rejection / total) * 100) : 0
+      list.push({
+        managerId: mid,
+        name: getManagerName(mid),
+        total,
+        inProgress,
+        closed,
+        rejection,
+        conversionPct,
+        goodPct,
+        badPct,
+      })
+    })
+    return list.sort((a, b) => b.conversionPct - a.conversionPct || b.closed - a.closed)
+  }, [managerIds, managerStageCounts])
+
+  /** Рейтинг: место по конверсии (1-based) */
+  const managerRankByConversion = useMemo(() => {
+    const order = managerStats.map((m) => m.managerId)
+    const rank: Record<string, number> = {}
+    order.forEach((id, i) => {
+      rank[id] = i + 1
+    })
+    return rank
+  }, [managerStats])
+
+  const avgConversion =
+    managerStats.length > 0
+      ? Math.round(managerStats.reduce((s, m) => s + m.conversionPct, 0) / managerStats.length)
+      : 0
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* Выбор среза: вся сеть или конкретный менеджер */}
       <Card className="leads-card border-slate-200 bg-slate-50/30">
         <CardContent className="flex flex-wrap items-center gap-4 py-4">
@@ -224,55 +288,77 @@ export function LeadAnalyticsTab() {
         onSelectedManagerIdChange={setSelectedManagerId}
       />
 
-      {/* Воронка продаж — те же этапы CRM, что и в канбане на странице партнёра */}
-      <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="section-title">Воронка продаж</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Все этапы CRM в соответствии с воронкой в канбане. Конверсии и разбивка по стадиям.
-            </p>
+      {/* Светлый блок дашборда (без картежной темы) */}
+      <div className="leads-analytics-dashboard space-y-6">
+        {/* Компактная строка KPI */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="dashboard-kpi-card">
+            <div className="kpi-value">{kpiTotal.toLocaleString('ru-RU')}</div>
+            <div className="kpi-label">Всего лидов</div>
           </div>
-          <div className="leads-period-toggle inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-            {PERIOD_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setPeriod(opt.value)}
-                className={
-                  'rounded-full px-4 py-2 text-sm font-medium transition-colors ' +
-                  (period === opt.value
-                    ? 'bg-slate-900 text-white shadow'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')
-                }
-              >
-                {opt.label}
-              </button>
-            ))}
+          <div className="dashboard-kpi-card">
+            <div className="kpi-value">{kpiInProgress.toLocaleString('ru-RU')}</div>
+            <div className="kpi-label">В работе</div>
+          </div>
+          <div className="dashboard-kpi-card">
+            <div className="kpi-value">{kpiClosed.toLocaleString('ru-RU')}</div>
+            <div className="kpi-label">Закрыто в сделку</div>
+          </div>
+          <div className="dashboard-kpi-card">
+            <div className="kpi-value">{kpiConversion}%</div>
+            <div className="kpi-label">Конверсия лид → сделка</div>
           </div>
         </div>
-        {salesFunnel ? (
-          <div className="space-y-6">
-            <ConversionOverviewChart funnel={salesFunnel} className="h-full" variant="leads" />
-            <FunnelKanban funnels={[salesFunnel]} variant="leads" />
-          </div>
-        ) : (
-          <Card className="leads-card border-slate-200 bg-slate-50/50">
-            <CardContent className="py-10 text-center text-slate-600">
-              Нет данных по воронке продаж за выбранный период.
-            </CardContent>
-          </Card>
-        )}
-      </section>
 
-      <section>
-        <h2 className="section-title mb-1">Куда сливается лидогенерация</h2>
-        <p className="mb-5 text-sm text-slate-600">
-          {selectedManagerId === '_all'
-            ? 'Объёмы лидов по типам аккаунтов (очередям) по всей сети.'
-            : `Объёмы лидов по очередям для выбранного среза (${scopeLabel}).`}
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Воронка продаж */}
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="section-title">Воронка продаж</h2>
+              <p className="mt-0.5 text-sm text-slate-600">
+                Все этапы CRM в соответствии с воронкой в канбане. Конверсии и разбивка по стадиям.
+              </p>
+            </div>
+            <div className="leads-period-toggle inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+              {PERIOD_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setPeriod(opt.value)}
+                  className={
+                    'rounded-full px-4 py-2 text-sm font-medium transition-colors ' +
+                    (period === opt.value
+                      ? 'bg-slate-900 text-white shadow'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')
+                  }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {salesFunnel ? (
+            <div className="space-y-4">
+              <ConversionOverviewChart funnel={salesFunnel} className="h-full" variant="leads" />
+              <FunnelKanban funnels={[salesFunnel]} variant="leads" />
+          </div>
+          ) : (
+            <Card className="leads-card border-slate-200 bg-slate-50/50">
+              <CardContent className="py-8 text-center text-slate-600">
+                Нет данных по воронке продаж за выбранный период.
+              </CardContent>
+            </Card>
+          )}
+        </section>
+
+        <section>
+          <h2 className="section-title mb-1">Куда сливается лидогенерация</h2>
+          <p className="mb-4 text-sm text-slate-600">
+            {selectedManagerId === '_all'
+              ? 'Объёмы лидов по типам аккаунтов (очередям) по всей сети.'
+              : `Объёмы лидов по очередям для выбранного среза (${scopeLabel}).`}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {(Object.keys(SOURCE_LABELS) as LeadSource[]).map((source) => {
             const count = flowsBySource[source]
             const pct = totalLeads ? Math.round((count / totalLeads) * 100) : 0
@@ -296,17 +382,73 @@ export function LeadAnalyticsTab() {
             )
           })}
         </div>
-      </section>
+        </section>
 
-      <section>
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="section-title">Аналитика по менеджерам</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Сколько лидов у менеджера на каждой стадии воронки. Выберите менеджера или смотрите сводку по всем.
-            </p>
-          </div>
-          <div className="flex min-w-[200px] flex-col gap-2">
+        {/* Сравнительная таблица по менеджерам */}
+        <section>
+          <h2 className="section-title mb-1">Сравнение по менеджерам</h2>
+          <p className="mb-4 text-sm text-slate-600">
+            Сводка и рейтинг по конверсии в сделку. Место — по убыванию конверсии.
+          </p>
+          <Card className="leads-card overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/80">
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Место</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Менеджер</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Всего</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">В работе</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Закрыто</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Отказ</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Конверсия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {managerStats.map((m, i) => (
+                      <tr
+                        key={m.managerId}
+                        className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} ${selectedManagerId === m.managerId ? 'ring-inset ring-1 ring-amber-400/50' : ''}`}
+                      >
+                        <td className="px-4 py-2.5">
+                          <span className="inline-flex size-6 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-700">
+                            {managerRankByConversion[m.managerId]}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 font-medium text-slate-900">{m.name}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums text-slate-700">{m.total}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums text-slate-700">{m.inProgress}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums text-emerald-700 font-medium">{m.closed}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums text-red-700/90">{m.rejection}</td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span className="tabular-nums font-semibold text-slate-900">{m.conversionPct}%</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {managerStats.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                          Нет данных по менеджерам
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section>
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="section-title">Аналитика по менеджерам</h2>
+              <p className="mt-0.5 text-sm text-slate-600">
+                Сколько лидов у менеджера на каждой стадии воронки. Выберите менеджера или смотрите сводку по всем.
+              </p>
+            </div>
+            <div className="flex min-w-[200px] flex-col gap-2">
             <Label className="text-slate-600">Менеджер для аналитики</Label>
             <Select value={selectedManagerId} onValueChange={setSelectedManagerId}>
               <SelectTrigger className="leads-select-trigger w-full">
@@ -326,7 +468,57 @@ export function LeadAnalyticsTab() {
         </div>
 
         {selectedManagerId !== '_all' ? (
-          <Card className="leads-card overflow-hidden">
+          <div className="space-y-4">
+            {selectedManagerId !== '_unassigned' && managerStats.find((m) => m.managerId === selectedManagerId) && (() => {
+              const stat = managerStats.find((m) => m.managerId === selectedManagerId)!
+              const place = managerRankByConversion[selectedManagerId]
+              const totalManagers = managerStats.length
+              const aboveAvg = stat.conversionPct >= avgConversion
+              return (
+                <Card className="leads-card overflow-hidden border-amber-500/30">
+                  <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <span className="inline-flex size-7 items-center justify-center rounded-full bg-amber-500/25 text-sm font-bold text-amber-200">
+                        {place}
+                      </span>
+                      Рейтинг: {stat.name}
+                    </CardTitle>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
+                      <span>
+                        <strong className="text-slate-800">{place} место</strong> из {totalManagers} по конверсии в сделку
+                      </span>
+                      <span className={aboveAvg ? 'text-emerald-600' : 'text-amber-600'}>
+                        {aboveAvg ? 'Выше' : 'Ниже'} среднего на {Math.abs(stat.conversionPct - avgConversion)} п.п. (среднее {avgConversion}%)
+                      </span>
+                    </p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs text-slate-500">Доля исходов:</span>
+                      <div className="flex h-2 flex-1 max-w-xs overflow-hidden rounded-full bg-slate-700/30">
+                        <div
+                          className="bg-emerald-500/90"
+                          style={{ width: `${stat.goodPct}%` }}
+                          title="Закрыто в сделку"
+                        />
+                        <div
+                          className="bg-amber-500/70"
+                          style={{ width: `${100 - stat.goodPct - stat.badPct}%` }}
+                          title="В работе"
+                        />
+                        <div
+                          className="bg-red-500/70"
+                          style={{ width: `${stat.badPct}%` }}
+                          title="Отказ"
+                        />
+                      </div>
+                      <span className="shrink-0 text-xs text-slate-500">
+                        закрыто {stat.goodPct}% · в работе {100 - stat.goodPct - stat.badPct}% · отказ {stat.badPct}%
+                      </span>
+                    </div>
+                  </CardHeader>
+                </Card>
+              )
+            })()}
+            <Card className="leads-card overflow-hidden">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50">
               <CardTitle className="flex items-center gap-2 text-base">
                 <User className="size-5 text-slate-600" />
@@ -375,6 +567,7 @@ export function LeadAnalyticsTab() {
               )}
             </CardContent>
           </Card>
+          </div>
         ) : (
           <Card className="leads-card overflow-hidden">
             <CardContent className="p-0">
@@ -436,7 +629,8 @@ export function LeadAnalyticsTab() {
             </CardContent>
           </Card>
         )}
-      </section>
+        </section>
+      </div>
     </div>
   )
 }
