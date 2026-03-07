@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type DragEvent, type ReactNode } from 'react'
-import { Crown, Eye, EyeOff, Flame, LayoutGrid, List, RefreshCw, RotateCcw, Search, ShieldAlert, X } from 'lucide-react'
+import { BarChart3, Crown, Eye, EyeOff, Flame, LayoutGrid, List, RefreshCw, RotateCcw, Search, ShieldAlert, X } from 'lucide-react'
 import { useLeads } from '@/context/LeadsContext'
 import { LEAD_STAGES, LEAD_STAGE_COLUMN } from '@/data/leads-mock'
 import type { Lead, LeadManager, LeadSource } from '@/types/leads'
@@ -255,6 +255,7 @@ export function LeadsSecretDistributionDialog({
   const [searchQuery, setSearchQuery] = useState('')
   const [nowTs, setNowTs] = useState(() => Date.now())
   const [drawerManagerId, setDrawerManagerId] = useState<string | null>(null)
+  const [showStageStats, setShowStageStats] = useState(false)
 
   useEffect(() => {
     const timerId = window.setInterval(() => setNowTs(Date.now()), 60_000)
@@ -349,7 +350,7 @@ export function LeadsSecretDistributionDialog({
 
     return [
       { key: 'in_progress', label: 'В работе', leads: inProgress.length, budgetUsd: sumBudget(inProgress) },
-      { key: 'success', label: 'Этапы успеха', leads: success.length, budgetUsd: sumBudget(success) },
+      { key: 'success', label: 'Успех', leads: success.length, budgetUsd: sumBudget(success) },
       { key: 'overdue', label: 'Просроченные', leads: overdue.length, budgetUsd: sumBudget(overdue) },
       { key: 'no_task', label: 'Без задач', leads: noTask.length, budgetUsd: sumBudget(noTask) },
     ]
@@ -455,6 +456,17 @@ export function LeadsSecretDistributionDialog({
     return Math.max(...leadManagers.map((manager) => managerInProgressLoad[manager.id] ?? 0), 1)
   }, [leadManagers, managerInProgressLoad])
 
+  /** Количество лидов по этапам воронки (вся куча) — для кнопки «статистика» */
+  const stageCounts = useMemo(
+    () =>
+      LEAD_STAGES.map((stage) => ({
+        stageId: stage.id,
+        stageName: stage.name,
+        count: leadPool.filter((lead) => lead.stageId === stage.id).length,
+      })).filter((row) => row.count > 0),
+    [leadPool]
+  )
+
   const resetTransientState = () => {
     setSelectedLeadId(null)
     setPreferredDeckLeadId(null)
@@ -467,6 +479,7 @@ export function LeadsSecretDistributionDialog({
   const clearSessionOnClose = () => {
     resetTransientState()
     setShowAllCards(false)
+    setShowStageStats(false)
     setDeckFilter('all')
     setViewMode('table')
     setSearchQuery('')
@@ -962,6 +975,46 @@ export function LeadsSecretDistributionDialog({
               <section className="secret-main-layout">
                 {viewMode === 'table' ? (
                   <div className="secret-board-felt">
+                  <div className="secret-stats-corner" style={{ zIndex: STACK_ORDER.cards + 1 }}>
+                    <Tooltip delayDuration={120}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className={cn('secret-stats-eye-btn', showStageStats && 'is-active')}
+                          onClick={() => setShowStageStats((prev) => !prev)}
+                          aria-label={showStageStats ? 'Скрыть статистику по этапам' : 'Показать статистику по этапам'}
+                        >
+                          {showStageStats ? (
+                            <BarChart3 className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" sideOffset={8}>
+                        {showStageStats ? 'Скрыть статистику по этапам' : 'Статистика по этапам воронки'}
+                      </TooltipContent>
+                    </Tooltip>
+                    {showStageStats && (
+                      <div className="secret-stage-stats-panel">
+                        <p className="secret-stage-stats-title">Лидов по этапам</p>
+                        <ul className="secret-stage-stats-list">
+                          {stageCounts.length === 0 ? (
+                            <li className="secret-stage-stats-empty">Нет данных</li>
+                          ) : (
+                            stageCounts.map((row) => (
+                              <li key={row.stageId} className="secret-stage-stats-row">
+                                <span className="secret-stage-stats-name">{row.stageName}</span>
+                                <span className="secret-stage-stats-count">{row.count}</span>
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                   <div className="secret-seats-ring" style={{ zIndex: STACK_ORDER.dropHints }}>
                     {leadManagers.map((manager, index) => {
                       const style = getSeatStyle(index, leadManagers.length)
@@ -1056,6 +1109,49 @@ export function LeadsSecretDistributionDialog({
                     })}
                   </div>
 
+                  <div className="secret-felt-lead-summary" style={{ zIndex: STACK_ORDER.cards }}>
+                    <div className="secret-felt-summary-inner">
+                      <p className="secret-felt-summary-title">Сводка</p>
+                      {selectedLead ? (
+                        <div className="secret-felt-summary-body">
+                          <p className="secret-felt-summary-name">{selectedLead.name ?? selectedLead.id}</p>
+                          <p className="secret-felt-summary-sub">
+                            {SOURCE_LABELS[selectedLead.source]} · {selectedLeadStage}
+                          </p>
+                          <p className="secret-felt-summary-sub">
+                            Бюджет: {formatLeadBudget(selectedLead)} · {getLeadChannelLabel(selectedLead)}
+                          </p>
+                          <p className="secret-felt-summary-sub">ID: {selectedLead.id}</p>
+                        </div>
+                      ) : (
+                        <p className="secret-felt-summary-empty">Выберите заявку из пула в центре.</p>
+                      )}
+                      <div className="secret-felt-summary-actions">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="secret-felt-undo-btn"
+                          disabled={sessionMoves.length === 0}
+                          onClick={undoLastMove}
+                        >
+                          <RotateCcw className="size-3.5" />
+                          Отменить
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="secret-felt-reset-btn"
+                          disabled={sessionTouchedLeadIds.length === 0}
+                          onClick={resetSession}
+                        >
+                          <RefreshCw className="size-3.5" />
+                          Сброс
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="secret-deck-pit" style={{ zIndex: STACK_ORDER.cards }}>
                     <div className="secret-deck-stack">
                       {deckLayerStyles.map((style, index) => (
@@ -1136,6 +1232,18 @@ export function LeadsSecretDistributionDialog({
                         </button>
                       ))}
                     </div>
+                    {showStageStats && (
+                      <div className="secret-deck-stage-stats">
+                        {stageCounts.map((row) => (
+                          <span key={row.stageId} className="secret-deck-stage-chip" title={row.stageName}>
+                            {row.stageName.length > 12 ? `${row.stageName.slice(0, 10)}…` : row.stageName}: {row.count}
+                          </span>
+                        ))}
+                        {stageCounts.length === 0 && (
+                          <span className="secret-deck-stage-chip">Нет лидов</span>
+                        )}
+                      </div>
+                    )}
                     <div className="secret-deck-actions">
                       <Button
                         type="button"
@@ -1234,47 +1342,6 @@ export function LeadsSecretDistributionDialog({
                 )}
 
                 <aside className="secret-side-panel" style={{ zIndex: STACK_ORDER.modal }}>
-                  <div className="secret-side-card">
-                    <p className="secret-side-title">Сводка</p>
-                    {selectedLead ? (
-                      <div className="secret-side-body">
-                        <p className="secret-side-name">{selectedLead.name ?? selectedLead.id}</p>
-                        <p className="secret-side-sub">
-                          {SOURCE_LABELS[selectedLead.source]} · {selectedLeadStage}
-                        </p>
-                        <p className="secret-side-sub">
-                          Бюджет: {formatLeadBudget(selectedLead)} · Источник: {getLeadChannelLabel(selectedLead)}
-                        </p>
-                        <p className="secret-side-sub">
-                          ID: {selectedLead.id}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="secret-side-empty">Выберите заявку из пула в центре экрана.</p>
-                    )}
-                    <div className="secret-side-actions">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="secret-undo-btn"
-                        disabled={sessionMoves.length === 0}
-                        onClick={undoLastMove}
-                      >
-                        <RotateCcw className="size-4" />
-                        Отменить ход
-                      </Button>
-                      <Button
-                        type="button"
-                        className="secret-reset-center"
-                        disabled={sessionTouchedLeadIds.length === 0}
-                        onClick={resetSession}
-                      >
-                        <RefreshCw className="size-4" />
-                        Сброс
-                      </Button>
-                    </div>
-                  </div>
-
                   <div className="secret-side-card">
                     <p className="secret-side-title">Правила</p>
                     <p className="secret-rule-line">
@@ -1406,7 +1473,7 @@ export function LeadsSecretDistributionDialog({
                     </table>
                   </div>
                   <p className="secret-manager-finance-note">
-                    Этапы успеха: {SUCCESS_STAGE_NAMES.join(', ')}.
+                    Успех: {SUCCESS_STAGE_NAMES.join(', ')}.
                   </p>
                 </section>
 
