@@ -705,10 +705,10 @@ function StageDeckPile({
   const criticalLeads = leads.filter((lead) => getLeadProblemState(lead) === "critical").length
   const columnCommission = leads.reduce((sum, lead) => sum + (lead.commissionUsd ?? 0), 0)
 
-  const cardWidth = 95
-  const cardHeight = 142
-  const cardStep = 27
-  const pileHeight = hiddenLayers * 3 + 4 + cardHeight + 8
+  const cardWidth = compact ? 76 : 95
+  const cardHeight = compact ? 114 : 142
+  const cardStep = compact ? 22 : 27
+  const pileHeight = hiddenLayers * (compact ? 2 : 3) + 4 + cardHeight + (compact ? 6 : 8)
 
   const columnId = LEAD_STAGE_COLUMN[stageId] ?? "in_progress"
   const [showLocalStats, setShowLocalStats] = useState(false)
@@ -796,14 +796,15 @@ function StageDeckPile({
               key={`back-${stageId}-${layerIndex}`}
               aria-hidden
               className={cn(
-                "absolute rounded-[14px] shadow-[0_3px_8px_rgba(0,0,0,0.25)]",
+                "absolute shadow-[0_3px_8px_rgba(0,0,0,0.25)]",
+                compact ? "rounded-[11px]" : "rounded-[14px]",
                 "v2-card-back",
                 deckTone === "critical" && "border-rose-300/90"
               )}
               style={{
                 width: cardWidth,
                 height: cardHeight,
-                top: layerIndex * 3,
+                top: layerIndex * (compact ? 2 : 3),
                 left: 0,
                 zIndex: layerIndex + 1,
               }}
@@ -822,14 +823,15 @@ function StageDeckPile({
                 type="button"
                 onClick={() => onSelect(lead.id)}
                 className={cn(
-                  "absolute overflow-hidden rounded-[14px] px-1.5 py-1.5 text-center shadow-[0_4px_10px_rgba(0,0,0,0.26)] v2-card-face",
+                  "absolute overflow-hidden px-1.5 py-1.5 text-center shadow-[0_4px_10px_rgba(0,0,0,0.26)] v2-card-face",
+                  compact ? "rounded-[11px]" : "rounded-[14px]",
                   isCritical && "is-critical",
                   activeLeadId === lead.id && "ring-2 ring-[rgba(243,209,139,0.6)]"
                 )}
                 style={{
                   width: cardWidth,
                   height: cardHeight,
-                  top: hiddenLayers * 3 + 4 + cardIndex * cardStep,
+                  top: hiddenLayers * (compact ? 2 : 3) + 4 + cardIndex * cardStep,
                   left: 0,
                   zIndex: 20 + cardIndex,
                   animationName: "dealCard",
@@ -842,7 +844,7 @@ function StageDeckPile({
                 {isCritical && (
                   <span
                     aria-hidden
-                    className="pointer-events-none absolute inset-0 rounded-[14px]"
+                    className={cn("pointer-events-none absolute inset-0", compact ? "rounded-[11px]" : "rounded-[14px]")}
                     style={{
                       background: "repeating-linear-gradient(145deg,rgba(251,113,133,0.09) 0px,rgba(251,113,133,0.09) 3px,transparent 3px,transparent 16px)",
                       zIndex: 0,
@@ -856,14 +858,15 @@ function StageDeckPile({
                 )}
                 <p
                   className={cn(
-                    "relative z-10 mt-4 text-[13px] font-medium leading-tight text-[#2a2318]",
+                    "relative z-10 font-medium leading-tight text-[#2a2318]",
+                    compact ? "mt-2 text-[11px]" : "mt-4 text-[13px]",
                     isFrontCard ? "line-clamp-3 whitespace-normal break-words" : "line-clamp-2"
                   )}
                 >
                   {lead.name ?? lead.id}
                 </p>
                 {columnId === "in_progress" && lead.commissionUsd != null && (
-                  <p className="relative z-10 mt-1 text-[10px] font-medium text-[#6b5e4e]">
+                  <p className={cn("relative z-10 font-medium text-[#6b5e4e]", compact ? "mt-0.5 text-[9px]" : "mt-1 text-[10px]")}>
                     {formatUsd(lead.commissionUsd)}
                   </p>
                 )}
@@ -874,7 +877,7 @@ function StageDeckPile({
 
         {leads.length === 0 && (
           <span
-            className="v2-card-back absolute rounded-[14px] border border-dashed border-[rgba(238,209,152,0.4)] opacity-60"
+            className={cn("v2-card-back absolute border border-dashed border-[rgba(238,209,152,0.4)] opacity-60", compact ? "rounded-[11px]" : "rounded-[14px]")}
             style={{ width: cardWidth, height: cardHeight, top: 0, left: 0 }}
           />
         )}
