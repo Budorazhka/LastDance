@@ -73,7 +73,7 @@ export function LeadSourcesTab() {
         Нажмите на карточку источника, чтобы открыть список лидов и посмотреть их статус.
       </p>
 
-      <Card>
+      <Card className="leads-card">
         <CardHeader>
           <CardTitle className="text-base font-semibold">Источник лидов</CardTitle>
           <p className="text-sm text-slate-600">

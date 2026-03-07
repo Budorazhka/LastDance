@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { User, Users, LayoutGrid, LockKeyhole } from 'lucide-react'
+import { User, Users } from 'lucide-react'
 import { useLeads } from '@/context/LeadsContext'
 import { LEAD_STAGES } from '@/data/leads-mock'
 import type { LeadSource } from '@/types/leads'
@@ -9,7 +9,6 @@ import { getAnalyticsData } from '@/lib/mock/analytics-network'
 import { ConversionOverviewChart, FunnelKanban } from '@/components/analytics-network'
 import { LeadsCardTableDialog } from '@/components/leads/LeadsCardTableDialog'
 import { LeadsCardTableV2Dialog } from '@/components/leads/LeadsCardTableV2Dialog'
-import { LeadsSecretDistributionDialog } from '@/components/leads/LeadsSecretDistributionDialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -20,6 +19,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
+/** Включить кнопку и диалог «Карточный стол лидов» (старая версия). false = скрыто. */
+const SHOW_LEGACY_CARD_TABLE = false
+
+/** Иконка карточного стола (игральные карты) */
+function CardTableIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="1" width="15" height="21" rx="2.2" />
+      <rect x="7" y="3" width="15" height="21" rx="2.2" />
+      <path d="M19.5 8.5l1.5 2.5-1.5 2.5-1.5-2.5 1.5-2.5z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
 
 const SOURCE_LABELS: Record<LeadSource, string> = {
   primary: 'Первичка',
@@ -68,13 +89,8 @@ export function LeadAnalyticsTab() {
   const [selectedManagerId, setSelectedManagerId] = useState<string>('_all')
   const [cardTableOpen, setCardTableOpen] = useState(false)
   const [cardTableV2Open, setCardTableV2Open] = useState(false)
-  const [secretDialogOpen, setSecretDialogOpen] = useState(false)
   const { state } = useLeads()
   const { leadPool, leadManagers } = state
-
-  const openSecretSection = () => {
-    setSecretDialogOpen(true)
-  }
 
   /** Лиды для текущего среза: вся сеть или один менеджер */
   const filteredLeads = useMemo(() => {
@@ -142,7 +158,7 @@ export function LeadAnalyticsTab() {
   return (
     <div className="space-y-10">
       {/* Выбор среза: вся сеть или конкретный менеджер */}
-      <Card className="border-slate-200 bg-slate-50/30">
+      <Card className="leads-card border-slate-200 bg-slate-50/30">
         <CardContent className="flex flex-wrap items-center gap-4 py-4">
           <div className="flex items-center gap-2">
             {selectedManagerId === '_all' ? (
@@ -153,10 +169,10 @@ export function LeadAnalyticsTab() {
             <span className="text-sm font-medium text-slate-700">Показать аналитику:</span>
           </div>
           <Select value={selectedManagerId} onValueChange={setSelectedManagerId}>
-            <SelectTrigger className="w-full min-w-[220px] max-w-sm border-slate-200 bg-white">
+            <SelectTrigger className="leads-select-trigger w-full min-w-[220px] max-w-sm border-slate-200 bg-white">
               <SelectValue placeholder="Выберите срез" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="leads-select-content">
               <SelectItem value="_all">Вся сеть (все менеджеры)</SelectItem>
               {leadManagers.map((m) => (
                 <SelectItem key={m.id} value={m.id}>
@@ -169,41 +185,37 @@ export function LeadAnalyticsTab() {
           <span className="text-sm text-slate-500">
             Сейчас: <span className="font-medium text-slate-700">{scopeLabel}</span>
           </span>
+          {SHOW_LEGACY_CARD_TABLE && (
           <Button
             variant="outline"
-            className="gap-2 border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+            className="gap-2 border-[rgba(229,196,136,0.6)] bg-[rgba(68,43,18,0.5)] text-[#fcecc8] hover:border-[rgba(236,194,112,0.7)] hover:bg-[rgba(88,57,25,0.65)] hover:text-[#fff5e0]"
             onClick={() => setCardTableOpen(true)}
           >
-            <LayoutGrid className="size-4" />
+            <CardTableIcon className="size-4 shrink-0" />
             Карточный стол лидов
           </Button>
+        )}
           <Button
             variant="outline"
-            className="gap-2 border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"
+            className="gap-2 border-[rgba(229,196,136,0.6)] bg-[rgba(68,43,18,0.5)] text-[#fcecc8] hover:border-[rgba(236,194,112,0.7)] hover:bg-[rgba(88,57,25,0.65)] hover:text-[#fff5e0]"
             onClick={() => setCardTableV2Open(true)}
           >
-            <LayoutGrid className="size-4" />
+            <CardTableIcon className="size-4 shrink-0" />
             Карточный стол лидов v2
-          </Button>
-          <Button
-            variant="outline"
-            className="gap-2 border-[#9f7a31] bg-[#f8f0df] text-[#4f3400] hover:bg-[#f3e4c7]"
-            onClick={openSecretSection}
-          >
-            <LockKeyhole className="size-4" />
-            Режим руководителя
           </Button>
         </CardContent>
       </Card>
 
-      <LeadsCardTableDialog
-        open={cardTableOpen}
-        onOpenChange={setCardTableOpen}
-        selectedManagerId={selectedManagerId}
-        onSelectedManagerIdChange={setSelectedManagerId}
-        period={period}
-        onPeriodChange={setPeriod}
-      />
+      {SHOW_LEGACY_CARD_TABLE && (
+        <LeadsCardTableDialog
+          open={cardTableOpen}
+          onOpenChange={setCardTableOpen}
+          selectedManagerId={selectedManagerId}
+          onSelectedManagerIdChange={setSelectedManagerId}
+          period={period}
+          onPeriodChange={setPeriod}
+        />
+      )}
 
       <LeadsCardTableV2Dialog
         open={cardTableV2Open}
@@ -211,8 +223,6 @@ export function LeadAnalyticsTab() {
         selectedManagerId={selectedManagerId}
         onSelectedManagerIdChange={setSelectedManagerId}
       />
-
-      <LeadsSecretDistributionDialog open={secretDialogOpen} onOpenChange={setSecretDialogOpen} />
 
       {/* Воронка продаж — те же этапы CRM, что и в канбане на странице партнёра */}
       <section>
@@ -223,7 +233,7 @@ export function LeadAnalyticsTab() {
               Все этапы CRM в соответствии с воронкой в канбане. Конверсии и разбивка по стадиям.
             </p>
           </div>
-          <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+          <div className="leads-period-toggle inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
             {PERIOD_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -243,11 +253,11 @@ export function LeadAnalyticsTab() {
         </div>
         {salesFunnel ? (
           <div className="space-y-6">
-            <ConversionOverviewChart funnel={salesFunnel} className="h-full" />
-            <FunnelKanban funnels={[salesFunnel]} />
+            <ConversionOverviewChart funnel={salesFunnel} className="h-full" variant="leads" />
+            <FunnelKanban funnels={[salesFunnel]} variant="leads" />
           </div>
         ) : (
-          <Card className="border-slate-200 bg-slate-50/50">
+          <Card className="leads-card border-slate-200 bg-slate-50/50">
             <CardContent className="py-10 text-center text-slate-600">
               Нет данных по воронке продаж за выбранный период.
             </CardContent>
@@ -268,7 +278,7 @@ export function LeadAnalyticsTab() {
             const pct = totalLeads ? Math.round((count / totalLeads) * 100) : 0
             const barPct = maxFlow ? Math.round((count / maxFlow) * 100) : 0
             return (
-              <Card key={source} className="overflow-hidden">
+              <Card key={source} className="leads-card overflow-hidden">
                 <CardHeader className="pb-1">
                   <CardTitle className="text-base font-semibold">{SOURCE_LABELS[source]}</CardTitle>
                 </CardHeader>
@@ -299,10 +309,10 @@ export function LeadAnalyticsTab() {
           <div className="flex min-w-[200px] flex-col gap-2">
             <Label className="text-slate-600">Менеджер для аналитики</Label>
             <Select value={selectedManagerId} onValueChange={setSelectedManagerId}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="leads-select-trigger w-full">
                 <SelectValue placeholder="Выберите менеджера" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="leads-select-content">
                 <SelectItem value="_all">Все менеджеры</SelectItem>
                 {leadManagers.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
@@ -316,7 +326,7 @@ export function LeadAnalyticsTab() {
         </div>
 
         {selectedManagerId !== '_all' ? (
-          <Card className="overflow-hidden">
+          <Card className="leads-card overflow-hidden">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50">
               <CardTitle className="flex items-center gap-2 text-base">
                 <User className="size-5 text-slate-600" />
@@ -366,7 +376,7 @@ export function LeadAnalyticsTab() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="overflow-hidden">
+          <Card className="leads-card overflow-hidden">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

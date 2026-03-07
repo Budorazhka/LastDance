@@ -21,6 +21,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { LeadsSecretDistributionDialog } from '@/components/leads/LeadsSecretDistributionDialog'
+
+/** Иконка игральных карт — переход в режим распределения */
+function PlayingCardsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {/* задняя карта */}
+      <rect x="3" y="1" width="15" height="21" rx="2.2" />
+      {/* передняя карта */}
+      <rect x="7" y="3" width="15" height="21" rx="2.2" />
+      {/* масть (бубна) на уголке */}
+      <path d="M19.5 8.5l1.5 2.5-1.5 2.5-1.5-2.5 1.5-2.5z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
 
 const SOURCE_LABELS: Record<LeadSource, string> = {
   primary: 'Первичка',
@@ -46,6 +69,7 @@ const CHANNEL_LABELS: Record<NonNullable<Lead['channel']>, string> = {
 export function LeadCloudTab() {
   const [openSource, setOpenSource] = useState<LeadSource | null>(null)
   const [openLeadId, setOpenLeadId] = useState<string | null>(null)
+  const [secretDialogOpen, setSecretDialogOpen] = useState(false)
   const { state, dispatch, leadsBySource, isAutoDistribution } = useLeads()
   const { leadPool, leadManagers, manualDistributorId } = state
   const isDirector = isLeadAdminDirector()
@@ -72,22 +96,34 @@ export function LeadCloudTab() {
 
   return (
     <div className="space-y-8">
-      <p className="max-w-2xl text-sm text-slate-600">
-        Все лиды попадают в единое облако. Разбивка по четырём типам аккаунтов.
-        {manualDistributorId && (
-          <span className="mt-2 block font-medium text-slate-800">
-            Рукопашной режим: {getManagerName(manualDistributorId)}
-          </span>
-        )}
-        {isAutoDistribution && (
-          <span className="mt-2 block font-medium text-slate-700">
-            Назначение по правилу «{state.distributionRule.type === 'round_robin' ? 'По кругу' : 'По загрузке'}». Новые лиды назначаются автоматически.
-          </span>
-        )}
-      </p>
+      <div className="flex flex-wrap items-center gap-4">
+        <p className="max-w-2xl text-sm text-slate-600">
+          Все лиды попадают в единое облако. Разбивка по четырём типам аккаунтов.
+          {manualDistributorId && (
+            <span className="mt-2 block font-medium text-slate-800">
+              Рукопашной режим: {getManagerName(manualDistributorId)}
+            </span>
+          )}
+          {isAutoDistribution && (
+            <span className="mt-2 block font-medium text-slate-700">
+              Назначение по правилу «{state.distributionRule.type === 'round_robin' ? 'По кругу' : 'По загрузке'}». Новые лиды назначаются автоматически.
+            </span>
+          )}
+        </p>
+        <Button
+          variant="outline"
+          className="gap-2 shrink-0 border-[rgba(229,196,136,0.6)] bg-[rgba(68,43,18,0.5)] text-[#fcecc8] hover:border-[rgba(236,194,112,0.7)] hover:bg-[rgba(88,57,25,0.65)] hover:text-[#fff5e0]"
+          onClick={() => setSecretDialogOpen(true)}
+        >
+          <PlayingCardsIcon className="size-5 shrink-0" />
+          Режим распределения
+        </Button>
+      </div>
+
+      <LeadsSecretDistributionDialog open={secretDialogOpen} onOpenChange={setSecretDialogOpen} />
 
       {/* Раздел неназначенных лидов: для ручного назначения */}
-      <Card className="border-amber-200/60 bg-amber-50/30">
+      <Card className="leads-card border-amber-200/60 bg-amber-50/30">
         <CardHeader className="pb-3">
           <CardTitle className="section-title flex items-center gap-2">
             <UserPlus className="size-5 text-amber-700" />
@@ -111,10 +147,10 @@ export function LeadCloudTab() {
                   <div className="min-w-[220px] flex-1 space-y-1.5">
                     <Label className="text-slate-700">Назначить на менеджера</Label>
                     <Select value={assignAllToManagerId} onValueChange={setAssignAllToManagerId}>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="leads-select-trigger w-full">
                         <SelectValue placeholder="Выберите менеджера" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="leads-select-content">
                         {leadManagers.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             {m.name}
@@ -155,10 +191,10 @@ export function LeadCloudTab() {
                           }
                         }}
                       >
-                        <SelectTrigger className="h-8 w-[180px] border-slate-200">
+                        <SelectTrigger className="leads-select-trigger h-8 w-[180px] border-slate-200">
                           <SelectValue placeholder="Назначить на..." />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="leads-select-content">
                           <SelectItem value="_none">— Назначить на...</SelectItem>
                           {leadManagers
                             .filter((m) => m.sourceTypes.includes(lead.source))
@@ -194,7 +230,7 @@ export function LeadCloudTab() {
           return (
             <Card
               key={source}
-              className={`${SOURCE_CARD_CLASS[source]} transition-shadow hover:shadow-md`}
+              className={`leads-card ${SOURCE_CARD_CLASS[source]} transition-shadow hover:shadow-md`}
             >
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
@@ -245,7 +281,7 @@ export function LeadCloudTab() {
         })}
       </div>
 
-      <Card className="border-slate-200 bg-slate-50/50">
+      <Card className="leads-card border-slate-200 bg-slate-50/50">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-base">Всего в облаке</CardTitle>
           <div className="flex items-baseline gap-2">
@@ -380,6 +416,7 @@ export function LeadCloudTab() {
 
 function LeadRow({
   lead,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- передаётся для единообразия вызова
   source: _source,
   getStageName,
   getManagerName,

@@ -65,7 +65,7 @@ export function LeadPartnersTab() {
         </p>
       )}
 
-      <Card>
+      <Card className="leads-card">
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4 space-y-0">
           <div>
             <CardTitle className="text-base font-semibold">Кто имеет доступ к разделу «Контроль лидов»</CardTitle>
@@ -140,10 +140,10 @@ export function LeadPartnersTab() {
                 value={sourceType}
                 onValueChange={(v: LeadSource) => setSourceType(v)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="leads-select-trigger">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="leads-select-content">
                   {(Object.keys(SOURCE_LABELS) as LeadSource[]).map((s) => (
                     <SelectItem key={s} value={s}>
                       {SOURCE_LABELS[s]}
@@ -155,10 +155,10 @@ export function LeadPartnersTab() {
             <div className="space-y-2">
               <Label>Город (необязательно)</Label>
               <Select value={cityId || '_none'} onValueChange={(v) => setCityId(v === '_none' ? '' : v)}>
-                <SelectTrigger>
+                <SelectTrigger className="leads-select-trigger">
                   <SelectValue placeholder="Не выбран" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="leads-select-content">
                   <SelectItem value="_none">Не выбран</SelectItem>
                   {cities.map((c) => (
                     <SelectItem key={c.id} value={c.id}>

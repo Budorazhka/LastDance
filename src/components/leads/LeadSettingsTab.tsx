@@ -25,7 +25,7 @@ export function LeadSettingsTab() {
 
   if (!isDirector) {
     return (
-      <Card className="border-slate-200 bg-slate-50/50">
+      <Card className="leads-card border-slate-200 bg-slate-50/50">
         <CardContent className="flex items-start gap-4 pt-6">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600">
             <Info className="size-5" />
@@ -44,7 +44,7 @@ export function LeadSettingsTab() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="leads-card">
         <CardHeader>
           <CardTitle className="text-base font-semibold">Правило раздачи</CardTitle>
           <p className="text-sm text-slate-600">
@@ -63,10 +63,10 @@ export function LeadSettingsTab() {
                 }
               }}
             >
-              <SelectTrigger className="w-full max-w-xs border-slate-200">
+              <SelectTrigger className="leads-select-trigger w-full max-w-xs border-slate-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="leads-select-content">
                 {(Object.keys(RULE_LABELS) as DistributionRuleType[]).map((type) => (
                   <SelectItem key={type} value={type}>
                     {RULE_LABELS[type]}
@@ -78,7 +78,7 @@ export function LeadSettingsTab() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="leads-card">
         <CardHeader>
           <CardTitle className="text-base font-semibold">Менеджер в рукопашном режиме</CardTitle>
           <p className="text-sm text-slate-600">
@@ -101,10 +101,10 @@ export function LeadSettingsTab() {
                 }
               }}
             >
-              <SelectTrigger className="w-full max-w-xs border-slate-200">
+              <SelectTrigger className="leads-select-trigger w-full max-w-xs border-slate-200">
                 <SelectValue placeholder="Не назначен" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="leads-select-content">
                 <SelectItem value="_none">Не назначен</SelectItem>
                 {leadManagers.map((m) => (
                   <SelectItem key={m.id} value={m.id}>

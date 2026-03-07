@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ShieldX } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
+import './leads-secret-table.css'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { hasLeadAdminAccess } from '@/lib/portal-user'
@@ -37,71 +38,57 @@ export function LeadsAdminPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <Header
-        title="Контроль лидов"
-        breadcrumbs={[{ label: 'Обзор', href: '/' }, { label: 'Контроль лидов' }]}
-      />
-      <Tabs defaultValue="cloud" className="w-full">
-        <div className="flex flex-wrap items-center gap-3">
-          <TabsList className="inline-flex h-auto rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-            <TabsTrigger
-              value="cloud"
-              className="rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-slate-100 data-[state=inactive]:hover:text-slate-900"
-            >
-              Облако лидов
-            </TabsTrigger>
-            <TabsTrigger
-              value="settings"
-              className="rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-slate-100 data-[state=inactive]:hover:text-slate-900"
-            >
-              Настройки
-            </TabsTrigger>
-            <TabsTrigger
-              value="managers"
-              className="rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-slate-100 data-[state=inactive]:hover:text-slate-900"
-            >
-              Менеджеры
-            </TabsTrigger>
-            <TabsTrigger
-              value="partners"
-              className="rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-slate-100 data-[state=inactive]:hover:text-slate-900"
-            >
-              Доступ к разделу
-            </TabsTrigger>
-            <TabsTrigger
-              value="sources"
-              className="rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-slate-100 data-[state=inactive]:hover:text-slate-900"
-            >
-              Источник лидов
-            </TabsTrigger>
-            <TabsTrigger
-              value="analytics"
-              className="rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=inactive]:text-slate-600 data-[state=inactive]:hover:bg-slate-100 data-[state=inactive]:hover:text-slate-900"
-            >
-              Аналитика
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="cloud" className="mt-6">
-          <LeadCloudTab />
-        </TabsContent>
-        <TabsContent value="settings" className="mt-6">
-          <LeadSettingsTab />
-        </TabsContent>
-        <TabsContent value="managers" className="mt-6">
-          <LeadManagersTab />
-        </TabsContent>
-        <TabsContent value="partners" className="mt-6">
-          <LeadPartnersTab />
-        </TabsContent>
-        <TabsContent value="sources" className="mt-6">
-          <LeadSourcesTab />
-        </TabsContent>
-        <TabsContent value="analytics" className="mt-6">
-          <LeadAnalyticsTab />
-        </TabsContent>
-      </Tabs>
+    <div className="leads-page-root -m-6 min-h-[calc(100vh+3rem)] lg:-m-8 lg:min-h-[calc(100vh+4rem)]">
+      <div className="leads-page-bg" aria-hidden />
+      <div className="leads-page-ornament" aria-hidden />
+      <div className="leads-page relative z-10 space-y-8 p-6 lg:p-8">
+        <Header
+          title="Контроль лидов"
+          breadcrumbs={[{ label: 'Обзор', href: '/' }, { label: 'Контроль лидов' }]}
+        />
+        <Tabs defaultValue="cloud" className="w-full">
+          <div className="flex flex-wrap items-center gap-3">
+            <TabsList className="leads-tabs-list inline-flex h-auto rounded-full p-1">
+              <TabsTrigger value="cloud" className="leads-tabs-trigger rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors">
+                Облако лидов
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="leads-tabs-trigger rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors">
+                Настройки
+              </TabsTrigger>
+              <TabsTrigger value="managers" className="leads-tabs-trigger rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors">
+                Менеджеры
+              </TabsTrigger>
+              <TabsTrigger value="partners" className="leads-tabs-trigger rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors">
+                Доступ к разделу
+              </TabsTrigger>
+              <TabsTrigger value="sources" className="leads-tabs-trigger rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors">
+                Источник лидов
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="leads-tabs-trigger rounded-full border-0 px-4 py-2 text-sm font-medium shadow-none transition-colors">
+                Аналитика
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="cloud" className="mt-6">
+            <LeadCloudTab />
+          </TabsContent>
+          <TabsContent value="settings" className="mt-6">
+            <LeadSettingsTab />
+          </TabsContent>
+          <TabsContent value="managers" className="mt-6">
+            <LeadManagersTab />
+          </TabsContent>
+          <TabsContent value="partners" className="mt-6">
+            <LeadPartnersTab />
+          </TabsContent>
+          <TabsContent value="sources" className="mt-6">
+            <LeadSourcesTab />
+          </TabsContent>
+          <TabsContent value="analytics" className="mt-6">
+            <LeadAnalyticsTab />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }

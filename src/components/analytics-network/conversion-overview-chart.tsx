@@ -16,6 +16,8 @@ interface ConversionOverviewChartProps {
     className?: string;
     /** При переданном колбэке в шапке карточки показывается кнопка «Сеть» (просмотр сети партнёра) */
     onViewNetwork?: () => void;
+    /** Тема «сукно» для страницы лидов: тёмный фон, кремовый текст, золотистые акценты */
+    variant?: "default" | "leads";
 }
 
 const chartConfig = {
@@ -37,9 +39,19 @@ type ConversionItem = {
     description: string;
 };
 
-function ConversionAxisTick({ x = 0, y = 0, payload }: ConversionAxisTickProps) {
+type ConversionAxisTickPropsWithVariant = ConversionAxisTickProps & { variant?: "default" | "leads" };
+
+function ConversionAxisTick({ x = 0, y = 0, payload, variant }: ConversionAxisTickPropsWithVariant) {
+    const isLeads = variant === "leads";
     return (
-        <text x={Number(x) - 4} y={Number(y) + 5} textAnchor="end" className="fill-slate-700 text-[14px] font-medium">
+        <text
+            x={Number(x) - 4}
+            y={Number(y) + 5}
+            textAnchor="end"
+            className={isLeads ? "text-[14px] font-medium" : ""}
+            fill={isLeads ? "#e8dcc4" : undefined}
+            style={isLeads ? { fill: "#e8dcc4" } : undefined}
+        >
             {payload?.value ?? ""}
         </text>
     );
@@ -70,45 +82,64 @@ function calculateConversion(board: FunnelBoard, fromStage: string, toStage: str
     return Math.round((toCount / fromCount) * 100);
 }
 
-export function ConversionOverviewChart({ funnel, className, onViewNetwork }: ConversionOverviewChartProps) {
+const LEADS_BAR_COLORS = {
+    leadToPresentation: "hsl(45, 68%, 55%)",
+    presentationToShowing: "hsl(180, 45%, 55%)",
+    showingToDeal: "hsl(152, 45%, 52%)",
+    leadToDeal: "hsl(35, 75%, 55%)",
+} as const;
+
+export function ConversionOverviewChart({ funnel, className, onViewNetwork, variant = "default" }: ConversionOverviewChartProps) {
+    const isLeads = variant === "leads";
     const data: ConversionItem[] = [
         {
             key: "leadToPresentation",
             label: "Лид → През.",
             value: calculateConversion(funnel, "Новый лид", "Презентовали компанию"),
-            color: "hsl(214, 84%, 56%)",
+            color: isLeads ? LEADS_BAR_COLORS.leadToPresentation : "hsl(214, 84%, 56%)",
             description: "Из новых лидов дошли до презентации",
         },
         {
             key: "presentationToShowing",
             label: "Презент. → Показ",
             value: calculateConversion(funnel, "Презентовали компанию", "Показ"),
-            color: "hsl(195, 92%, 45%)",
+            color: isLeads ? LEADS_BAR_COLORS.presentationToShowing : "hsl(195, 92%, 45%)",
             description: "Из презентаций дошли до показа",
         },
         {
             key: "showingToDeal",
             label: "Показ → Сделка",
             value: calculateConversion(funnel, "Показ", "Заключен договор"),
-            color: "hsl(152, 72%, 37%)",
+            color: isLeads ? LEADS_BAR_COLORS.showingToDeal : "hsl(152, 72%, 37%)",
             description: "Из показов закрылись в сделку",
         },
         {
             key: "leadToDeal",
             label: "Лид → Сделка",
             value: calculateConversion(funnel, "Новый лид", "Заключен договор"),
-            color: "hsl(35, 92%, 50%)",
+            color: isLeads ? LEADS_BAR_COLORS.leadToDeal : "hsl(35, 92%, 50%)",
             description: "Сквозная конверсия от лида до сделки",
         },
     ];
 
+    const tickFill = isLeads ? "#e8dcc4" : "#475569";
+    const labelListClass = isLeads ? "text-[16px] font-semibold" : "fill-slate-900 text-[16px] font-semibold";
+
     return (
-        <Card className={cn(className)}>
+        <Card className={cn(className, isLeads && "leads-card border border-[rgba(229,196,136,0.35)] bg-gradient-to-b from-[rgba(45,32,18,0.92)] to-[rgba(32,22,12,0.9)] text-[#f7ecd4] shadow-[0_4px_16px_rgba(0,0,0,0.25)]")}>
             <CardHeader className="px-3 pb-2 sm:px-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 flex-1">
-                        <CardTitle className="text-center text-xl font-semibold text-slate-900 sm:text-left sm:text-3xl">Конверсии</CardTitle>
-                        <p className="mt-1 text-center text-sm font-medium text-slate-700 sm:text-left sm:text-base">
+                        <CardTitle className={cn(
+                            "text-center text-xl font-semibold sm:text-left sm:text-3xl",
+                            isLeads ? "text-[#fcecc8]" : "text-slate-900"
+                        )}>
+                            Конверсии
+                        </CardTitle>
+                        <p className={cn(
+                            "mt-1 text-center text-sm font-medium sm:text-left sm:text-base",
+                            isLeads ? "text-[#e8dcc4]" : "text-slate-700"
+                        )}>
                             Процент лидов, перешедших на следующий шаг воронки.
                         </p>
                     </div>
@@ -116,7 +147,12 @@ export function ConversionOverviewChart({ funnel, className, onViewNetwork }: Co
                         <Button
                             variant="outline"
                             size="sm"
-                            className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20"
+                            className={cn(
+                                "shrink-0",
+                                isLeads
+                                    ? "border-[rgba(229,196,136,0.5)] bg-[rgba(68,43,18,0.6)] text-[#fcecc8] hover:bg-[rgba(88,57,25,0.7)]"
+                                    : "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20"
+                            )}
                             onClick={onViewNetwork}
                         >
                             Сеть
@@ -128,14 +164,19 @@ export function ConversionOverviewChart({ funnel, className, onViewNetwork }: Co
                 <div className="overflow-hidden">
                     <ChartContainer config={chartConfig} className="h-[360px] w-full">
                         <BarChart data={data} layout="vertical" margin={{ top: 8, right: 24, left: 20, bottom: 8 }}>
-                            <CartesianGrid horizontal={true} vertical={false} strokeDasharray="3 3" />
+                            <CartesianGrid
+                                horizontal={true}
+                                vertical={false}
+                                strokeDasharray="3 3"
+                                stroke={isLeads ? "rgba(229, 196, 136, 0.2)" : undefined}
+                            />
                             <XAxis
                                 type="number"
                                 domain={[0, 100]}
                                 tickLine={false}
                                 axisLine={false}
                                 tickFormatter={(value) => `${value}%`}
-                                tick={{ fill: "#475569", fontSize: 13, fontWeight: 500 }}
+                                tick={{ fill: tickFill, fontSize: 13, fontWeight: 500 }}
                             />
                             <YAxis
                                 type="category"
@@ -143,7 +184,7 @@ export function ConversionOverviewChart({ funnel, className, onViewNetwork }: Co
                                 width={200}
                                 tickLine={false}
                                 axisLine={false}
-                                tick={<ConversionAxisTick />}
+                                tick={<ConversionAxisTick variant={variant} />}
                             />
                             <ChartTooltip
                                 cursor={false}
@@ -154,11 +195,11 @@ export function ConversionOverviewChart({ funnel, className, onViewNetwork }: Co
                                             return (
                                                 <div className="w-full space-y-1">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <span className="text-muted-foreground">{row?.label ?? "Конверсия"}</span>
-                                                        <span className="font-medium tabular-nums">{Number(value)}%</span>
+                                                        <span className={isLeads ? "text-[#e8dcc4]" : "text-muted-foreground"}>{row?.label ?? "Конверсия"}</span>
+                                                        <span className={cn("font-medium tabular-nums", isLeads && "text-[#fcecc8]")}>{Number(value)}%</span>
                                                     </div>
                                                     {row?.description && (
-                                                        <p className="text-[11px] text-muted-foreground">{row.description}</p>
+                                                        <p className={cn("text-[11px]", isLeads ? "text-[#e8dcc4]" : "text-muted-foreground")}>{row.description}</p>
                                                     )}
                                                 </div>
                                             );
@@ -171,7 +212,9 @@ export function ConversionOverviewChart({ funnel, className, onViewNetwork }: Co
                                     dataKey="value"
                                     position="right"
                                     formatter={(value) => `${value ?? 0}%`}
-                                    className="fill-slate-900 text-[16px] font-semibold"
+                                    className={labelListClass}
+                                    fill={isLeads ? "#fcecc8" : undefined}
+                                    style={isLeads ? { fill: "#fcecc8" } : undefined}
                                 />
                                 {data.map((item) => (
                                     <Cell key={item.key} fill={item.color} />
@@ -183,15 +226,23 @@ export function ConversionOverviewChart({ funnel, className, onViewNetwork }: Co
 
                 <div className="mt-4 grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
                     {data.map((item) => (
-                        <div key={item.key} className="rounded-lg border bg-muted/20 px-3 py-2.5 sm:px-3.5 sm:py-3">
+                        <div
+                            key={item.key}
+                            className={cn(
+                                "rounded-lg border px-3 py-2.5 sm:px-3.5 sm:py-3",
+                                isLeads
+                                    ? "border-[rgba(229,196,136,0.25)] bg-[rgba(36,26,14,0.6)]"
+                                    : "bg-muted/20"
+                            )}
+                        >
                             <div className="flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1 flex items-center gap-1.5">
                                     <span className="h-2.5 w-2.5 shrink-0 rounded-full sm:h-3 sm:w-3" style={{ backgroundColor: item.color }} />
-                                    <span className="text-base font-medium text-slate-700 break-words">{item.label}</span>
+                                    <span className={cn("text-base font-medium break-words", isLeads ? "text-[#e8dcc4]" : "text-slate-700")}>{item.label}</span>
                                 </div>
-                                <span className="shrink-0 text-xl font-bold leading-none text-slate-900 tabular-nums">{item.value}%</span>
+                                <span className={cn("shrink-0 text-xl font-bold leading-none tabular-nums", isLeads ? "text-[#fcecc8]" : "text-slate-900")}>{item.value}%</span>
                             </div>
-                            <p className="mt-1 text-sm leading-snug text-slate-700">{item.description}</p>
+                            <p className={cn("mt-1 text-sm leading-snug", isLeads ? "text-[#e8dcc4]" : "text-slate-700")}>{item.description}</p>
                         </div>
                     ))}
                 </div>

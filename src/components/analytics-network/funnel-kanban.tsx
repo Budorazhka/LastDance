@@ -22,6 +22,8 @@ import type { FunnelBoard, FunnelColumn } from "@/types/analytics";
 
 interface FunnelKanbanProps {
     funnels: FunnelBoard[];
+    /** Тема «сукно» для страницы лидов */
+    variant?: "default" | "leads";
 }
 
 function getColumnTone({
@@ -105,10 +107,10 @@ function calculateConversion(board: FunnelBoard, fromStage: string, toStage: str
     return Math.round((toCount / fromCount) * 100);
 }
 
-function ConversionsDropdown({ board }: { board: FunnelBoard }) {
+function ConversionsDropdown({ board, variant }: { board: FunnelBoard; variant?: "default" | "leads" }) {
     if (board.id !== "sales") return null;
+    const isLeads = variant === "leads";
 
-    // Hardcoded stages for Sales funnel
     const conversions = [
         { label: "Новый лид → Презентация", from: "Новый лид", to: "Презентовали компанию" },
         { label: "Презентация → Показ", from: "Презентовали компанию", to: "Показ" },
@@ -119,18 +121,31 @@ function ConversionsDropdown({ board }: { board: FunnelBoard }) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="ml-auto gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                        "ml-auto gap-2",
+                        isLeads && "border-[rgba(229,196,136,0.5)] bg-[rgba(68,43,18,0.6)] text-[#fcecc8] hover:bg-[rgba(88,57,25,0.7)]"
+                    )}
+                >
                     <Percent className="h-4 w-4" />
                     Конверсии
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[280px]">
+            <DropdownMenuContent
+                align="end"
+                className={cn("w-[280px]", isLeads && "border-[rgba(229,196,136,0.4)] bg-[rgba(38,28,16,0.98)] text-[#f7ecd4]")}
+            >
                 {conversions.map((item, idx) => {
                     const val = calculateConversion(board, item.from, item.to);
                     return (
-                        <DropdownMenuItem key={idx} className="flex justify-between gap-2">
-                            <span className="truncate text-muted-foreground">{item.label}</span>
-                            <span className="font-medium">{val}%</span>
+                        <DropdownMenuItem
+                            key={idx}
+                            className={cn("flex justify-between gap-2", isLeads && "focus:bg-[rgba(68,43,18,0.7)] focus:text-[#fcecc8]")}
+                        >
+                            <span className={cn("truncate", isLeads ? "text-[#e8dcc4]" : "text-muted-foreground")}>{item.label}</span>
+                            <span className={cn("font-medium", isLeads && "text-[#fcecc8]")}>{val}%</span>
                         </DropdownMenuItem>
                     );
                 })}
@@ -139,31 +154,51 @@ function ConversionsDropdown({ board }: { board: FunnelBoard }) {
     );
 }
 
-export function FunnelKanban({ funnels }: FunnelKanbanProps) {
+const leadsCardClass =
+    "leads-card border border-[rgba(229,196,136,0.35)] bg-gradient-to-b from-[rgba(45,32,18,0.92)] to-[rgba(32,22,12,0.9)] text-[#f7ecd4] shadow-[0_4px_16px_rgba(0,0,0,0.25)]";
+
+export function FunnelKanban({ funnels, variant = "default" }: FunnelKanbanProps) {
+    const isLeads = variant === "leads";
+
     if (funnels.length === 0) {
         return (
-            <Card>
+            <Card className={cn(isLeads && leadsCardClass)}>
                 <CardHeader>
-                    <CardTitle>Воронки</CardTitle>
-                    <CardDescription>Нет данных для отображения.</CardDescription>
+                    <CardTitle className={cn(isLeads && "text-[#fcecc8]")}>Воронки</CardTitle>
+                    <CardDescription className={cn(isLeads && "text-[#e8dcc4]")}>Нет данных для отображения.</CardDescription>
                 </CardHeader>
             </Card>
         );
     }
 
     return (
-        <Card>
+        <Card className={cn(isLeads && leadsCardClass)}>
             <Tabs defaultValue={funnels[0].id}>
                 <CardHeader className="gap-3">
                     <div className="space-y-1 text-center">
-                        <CardTitle className="text-base font-medium sm:text-lg">Воронки в канбане</CardTitle>
-                        <CardDescription>
+                        <CardTitle className={cn("text-base font-medium sm:text-lg", isLeads && "text-[#fcecc8]")}>
+                            Воронки в канбане
+                        </CardTitle>
+                        <CardDescription className={cn(isLeads && "text-[#e8dcc4]")}>
                             Все этапы отражены полностью.
                         </CardDescription>
                     </div>
-                    <TabsList className="h-auto w-full flex-wrap justify-center">
+                    <TabsList
+                        className={cn(
+                            "h-auto w-full flex-wrap justify-center",
+                            isLeads && "border-[rgba(229,196,136,0.4)] bg-[rgba(40,27,14,0.94)] p-1"
+                        )}
+                    >
                         {funnels.map((board) => (
-                            <TabsTrigger key={board.id} value={board.id} className="text-center text-sm font-medium whitespace-normal leading-tight sm:text-base sm:whitespace-nowrap">
+                            <TabsTrigger
+                                key={board.id}
+                                value={board.id}
+                                className={cn(
+                                    "text-center text-sm font-medium whitespace-normal leading-tight sm:text-base sm:whitespace-nowrap",
+                                    isLeads &&
+                                        "text-[#e8dcc4] data-[state=active]:bg-[rgba(236,194,112,0.25)] data-[state=active]:text-[#fcecc8] data-[state=active]:border data-[state=active]:border-[rgba(229,196,136,0.5)]"
+                                )}
+                            >
                                 {board.shortName}
                             </TabsTrigger>
                         ))}
@@ -173,13 +208,33 @@ export function FunnelKanban({ funnels }: FunnelKanbanProps) {
                     {funnels.map((board) => (
                         <TabsContent key={board.id} value={board.id} className="m-0 space-y-3">
                             <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant="secondary">Всего: {board.totalCount.toLocaleString("ru-RU")}</Badge>
-                                <Badge variant="secondary">В работе: {board.activeCount.toLocaleString("ru-RU")}</Badge>
-                                <Badge variant="secondary">Отказ: {board.rejectionCount.toLocaleString("ru-RU")}</Badge>
+                                <Badge
+                                    variant="secondary"
+                                    className={cn(isLeads && "border-[rgba(229,196,136,0.3)] bg-[rgba(68,43,18,0.5)] text-[#e8dcc4]")}
+                                >
+                                    Всего: {board.totalCount.toLocaleString("ru-RU")}
+                                </Badge>
+                                <Badge
+                                    variant="secondary"
+                                    className={cn(isLeads && "border-[rgba(229,196,136,0.3)] bg-[rgba(68,43,18,0.5)] text-[#e8dcc4]")}
+                                >
+                                    В работе: {board.activeCount.toLocaleString("ru-RU")}
+                                </Badge>
+                                <Badge
+                                    variant="secondary"
+                                    className={cn(isLeads && "border-[rgba(229,196,136,0.3)] bg-[rgba(68,43,18,0.5)] text-[#e8dcc4]")}
+                                >
+                                    Отказ: {board.rejectionCount.toLocaleString("ru-RU")}
+                                </Badge>
                                 {board.closedCount > 0 && (
-                                    <Badge variant="secondary">Закрыто: {board.closedCount.toLocaleString("ru-RU")}</Badge>
+                                    <Badge
+                                        variant="secondary"
+                                        className={cn(isLeads && "border-[rgba(229,196,136,0.3)] bg-[rgba(68,43,18,0.5)] text-[#e8dcc4]")}
+                                    >
+                                        Закрыто: {board.closedCount.toLocaleString("ru-RU")}
+                                    </Badge>
                                 )}
-                                <ConversionsDropdown board={board} />
+                                <ConversionsDropdown board={board} variant={variant} />
                             </div>
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                                 {board.columns.map((column, columnIndex) => (
@@ -188,6 +243,7 @@ export function FunnelKanban({ funnels }: FunnelKanbanProps) {
                                         boardId={board.id}
                                         column={column}
                                         isFinalColumn={columnIndex === board.columns.length - 1}
+                                        variant={variant}
                                     />
                                 ))}
                             </div>
@@ -203,38 +259,54 @@ function FunnelColumnCard({
     boardId,
     column,
     isFinalColumn,
+    variant = "default",
 }: {
     boardId: FunnelBoard["id"];
     column: FunnelColumn;
     isFinalColumn: boolean;
+    variant?: "default" | "leads";
 }) {
+    const isLeads = variant === "leads";
     const tone = getColumnTone({ boardId, columnId: column.id, isFinalColumn });
     const maxStageCount = Math.max(...column.stages.map((stage) => stage.count), 1);
 
     return (
-        <div className="rounded-xl border bg-muted/20 p-3">
+        <div
+            className={cn(
+                "rounded-xl border p-3",
+                isLeads ? "border-[rgba(229,196,136,0.25)] bg-[rgba(36,26,14,0.6)]" : "bg-muted/20"
+            )}
+        >
             <div className="flex min-w-0 items-center justify-between gap-2">
-                <p className="min-w-0 break-words text-sm font-medium">{column.name}</p>
-                <Badge className={cn("shadow-none", tone.pill)}>
+                <p className={cn("min-w-0 break-words text-sm font-medium", isLeads && "text-[#e8dcc4]")}>{column.name}</p>
+                <Badge className={cn("shadow-none", tone.pill, isLeads && "border-[rgba(229,196,136,0.3)] bg-[rgba(68,43,18,0.5)] text-[#e8dcc4]")}>
                     {column.count.toLocaleString("ru-RU")}
                 </Badge>
             </div>
-            <Separator className="my-2" />
+            <Separator className={cn("my-2", isLeads && "bg-[rgba(229,196,136,0.25)]")} />
             <div className="space-y-2">
                 {column.stages.map((stage) => {
                     const width = Math.max(6, Math.round((stage.count / maxStageCount) * 100));
                     return (
-                        <div key={stage.id} className="rounded-lg border bg-background p-2">
+                        <div
+                            key={stage.id}
+                            className={cn(
+                                "rounded-lg border p-2",
+                                isLeads ? "border-[rgba(229,196,136,0.2)] bg-[rgba(32,22,12,0.5)]" : "bg-background"
+                            )}
+                        >
                             <div className="flex min-w-0 items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                    <p className="text-[11px] text-muted-foreground">Этап {stage.order}</p>
-                                    <p className="break-words text-sm leading-tight">{stage.name}</p>
+                                    <p className={cn("text-[11px]", isLeads ? "text-[#e8dcc4]/80" : "text-muted-foreground")}>
+                                        Этап {stage.order}
+                                    </p>
+                                    <p className={cn("break-words text-sm leading-tight", isLeads && "text-[#f7ecd4]")}>{stage.name}</p>
                                 </div>
-                                <span className="text-sm font-medium tabular-nums">
+                                <span className={cn("text-sm font-medium tabular-nums", isLeads && "text-[#fcecc8]")}>
                                     {stage.count.toLocaleString("ru-RU")}
                                 </span>
                             </div>
-                            <div className="mt-2 h-1.5 rounded-full bg-muted">
+                            <div className={cn("mt-2 h-1.5 rounded-full", isLeads ? "bg-[rgba(0,0,0,0.3)]" : "bg-muted")}>
                                 <div
                                     className={cn("h-full rounded-full", tone.bar)}
                                     style={{ width: `${width}%` }}
