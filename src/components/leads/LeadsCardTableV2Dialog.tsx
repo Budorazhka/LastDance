@@ -30,9 +30,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import "./leads-secret-table.css"
 
 const IN_PROGRESS_STAGES = LEAD_STAGES.filter(
   (stage) => LEAD_STAGE_COLUMN[stage.id] === "in_progress"
@@ -286,43 +286,46 @@ export function LeadsCardTableV2Dialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           showCloseButton={false}
-          className="!fixed !inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !m-0 !h-screen !w-screen !max-w-none !rounded-none !border-0 !p-0 overflow-hidden flex flex-col bg-[#0f6e50]"
+          className="v2-table-dialog !fixed !inset-0 !top-0 !left-0 !translate-x-0 !translate-y-0 !m-0 !h-screen !w-screen !max-w-none !rounded-none !border-0 !p-0 overflow-hidden flex flex-col"
         >
-          <DialogHeader className="h-11 shrink-0 border-b border-emerald-200/25 bg-[#0c5a42] px-3">
-            <div className="flex h-full items-center gap-2">
+          <div className="v2-table-root">
+            <div className="v2-table-bg" aria-hidden />
+            <div className="v2-table-ornament" aria-hidden />
+
+            <DialogHeader className="v2-table-hud !flex-row !flex-nowrap !gap-2 !text-left sm:!text-left">
               <DialogTitle className="sr-only">Карточный стол лидов v2</DialogTitle>
               <DialogDescription className="sr-only">Blackjack расклад лидов</DialogDescription>
 
-              <Label className="text-[11px] uppercase tracking-wide text-emerald-100">Менеджер</Label>
+              <Label className="shrink-0 text-[10px] uppercase tracking-wide text-[#f2dfb6]">Менеджер</Label>
               <Select value={selectedManagerId} onValueChange={onSelectedManagerIdChange}>
-                <SelectTrigger className="h-7 w-[190px] border-emerald-500 bg-emerald-900/35 text-xs text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_all">Вся сеть</SelectItem>
-                  {leadManagers.map((manager) => (
-                    <SelectItem key={manager.id} value={manager.id}>
-                      {manager.name}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="_unassigned">Не назначен</SelectItem>
-                </SelectContent>
+                <SelectTrigger className="h-7 w-[150px] shrink-0 border-[rgba(238,204,141,0.28)] bg-[rgba(22,15,8,0.75)] px-2 text-[11px] text-[#fff1cb] focus:ring-[rgba(152,219,252,0.3)]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-[rgba(239,205,142,0.24)] bg-[rgba(24,17,10,0.98)] text-[#f7e8c6]">
+                    <SelectItem value="_all">Вся сеть</SelectItem>
+                    {leadManagers.map((manager) => (
+                      <SelectItem key={manager.id} value={manager.id}>
+                        {manager.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="_unassigned">Не назначен</SelectItem>
+                  </SelectContent>
               </Select>
 
-              <Label className="ml-2 text-[11px] uppercase tracking-wide text-emerald-100">Дата</Label>
-              <div className="flex items-center gap-1">
+              <Label className="shrink-0 text-[10px] uppercase tracking-wide text-[#f2dfb6]">Дата</Label>
+              <div className="flex shrink-0 items-center gap-1">
                 <Input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="h-7 w-[130px] border-emerald-500 bg-emerald-900/35 px-2 text-xs text-white [color-scheme:dark]"
+                  className="h-7 w-[112px] border-[rgba(238,204,141,0.28)] bg-[rgba(22,15,8,0.75)] px-1.5 text-[11px] text-[#fff1cb] [color-scheme:dark]"
                 />
-                <span className="text-[11px] text-emerald-100">—</span>
+                <span className="text-[10px] text-[#f2dfb6]">—</span>
                 <Input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="h-7 w-[130px] border-emerald-500 bg-emerald-900/35 px-2 text-xs text-white [color-scheme:dark]"
+                  className="h-7 w-[112px] border-[rgba(238,204,141,0.28)] bg-[rgba(22,15,8,0.75)] px-1.5 text-[11px] text-[#fff1cb] [color-scheme:dark]"
                 />
               </div>
 
@@ -331,74 +334,75 @@ export function LeadsCardTableV2Dialog({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 gap-1 border-emerald-300/55 bg-emerald-800/35 px-2 text-xs text-emerald-50 hover:bg-emerald-700/70"
+                    className="h-7 shrink-0 gap-1 border-[rgba(241,208,146,0.28)] bg-[rgba(51,35,18,0.66)] px-1.5 text-[11px] text-[rgba(247,232,198,0.86)] hover:bg-[rgba(88,57,25,0.74)]"
                   >
-                    <Filter className="size-3.5" />
+                    <Filter className="size-3" />
                     Фильтры
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="start"
-                  className="min-w-[190px] border-emerald-500 bg-emerald-900 text-emerald-50"
+                  side="top"
+                  sideOffset={6}
+                  className="min-w-[190px] border-[rgba(239,205,142,0.24)] bg-[rgba(24,17,10,0.98)] text-[#f7e8c6] z-[100]"
                 >
-                  <DropdownMenuLabel className="text-xs uppercase tracking-wide text-emerald-200">
+                  <DropdownMenuLabel className="text-xs uppercase tracking-wide text-[rgba(249,230,190,0.95)]">
                     Показать
                   </DropdownMenuLabel>
                   <DropdownMenuCheckboxItem
                     checked={filterNoTask}
                     onCheckedChange={(v) => setFilterNoTask(v === true)}
-                    className="text-sm focus:bg-emerald-700 focus:text-white"
+                    className="text-sm focus:bg-[rgba(77,53,24,0.45)] focus:text-[#f7e8c6]"
                   >
                     Без задач
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={filterNoManager}
                     onCheckedChange={(v) => setFilterNoManager(v === true)}
-                    className="text-sm focus:bg-emerald-700 focus:text-white"
+                    className="text-sm focus:bg-[rgba(77,53,24,0.45)] focus:text-[#f7e8c6]"
                   >
                     Без менеджера
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={filterOverdue}
                     onCheckedChange={(v) => setFilterOverdue(v === true)}
-                    className="text-sm focus:bg-emerald-700 focus:text-white"
+                    className="text-sm focus:bg-[rgba(77,53,24,0.45)] focus:text-[#f7e8c6]"
                   >
                     Просрочка по задаче
                   </DropdownMenuCheckboxItem>
-                  <DropdownMenuSeparator className="border-emerald-700" />
+                  <DropdownMenuSeparator className="border-[rgba(242,207,141,0.2)]" />
                   <DropdownMenuCheckboxItem
                     checked={showStats}
                     onCheckedChange={(v) => setShowStats(v === true)}
-                    className="text-sm focus:bg-emerald-700 focus:text-white"
+                    className="text-sm focus:bg-[rgba(77,53,24,0.45)] focus:text-[#f7e8c6]"
                   >
                     Показать общую статистику
                   </DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-
               <Button
                 variant={onlyCritical ? "default" : "outline"}
                 size="sm"
                 onClick={() => setOnlyCritical((v) => !v)}
                 className={cn(
-                  "h-7 gap-1 px-2 text-xs",
+                  "h-7 shrink-0 gap-1 px-1.5 text-[11px] whitespace-nowrap",
                   onlyCritical
                     ? "border-rose-300 bg-rose-600 text-white hover:bg-rose-700"
-                    : "border-rose-300/70 bg-rose-900/30 text-rose-50 hover:bg-rose-800/60"
+                    : "border-[rgba(237,204,139,0.3)] bg-[rgba(61,39,18,0.62)] text-[rgba(251,236,201,0.9)] hover:bg-[rgba(88,57,25,0.74)]"
                 )}
               >
-                <AlertTriangle className="size-3.5" />
+                <AlertTriangle className="size-3" />
                 Только проблемные
               </Button>
 
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-emerald-200" />
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-[rgba(241,225,189,0.66)]" />
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Поиск по имени"
-                  className="h-7 w-[170px] border-emerald-500 bg-emerald-900/35 pl-7 text-xs text-white placeholder:text-emerald-200"
+                  className="h-7 w-full min-w-0 border-[rgba(238,204,141,0.28)] bg-[rgba(22,15,8,0.75)] pl-7 text-[11px] text-[#fff1cb] placeholder:text-[rgba(243,224,189,0.56)]"
                 />
               </div>
 
@@ -406,16 +410,14 @@ export function LeadsCardTableV2Dialog({
                 variant="outline"
                 size="sm"
                 onClick={() => onOpenChange(false)}
-                className="ml-auto h-7 gap-1 border-emerald-300/45 bg-emerald-950/30 px-2 text-xs text-emerald-50 hover:bg-emerald-800/70"
+                className="v2-close-btn ml-auto h-7 shrink-0 gap-1 px-2 text-[11px] font-medium"
               >
-                <X className="size-3.5" />
+                <X className="size-3" />
                 Закрыть
               </Button>
-            </div>
-          </DialogHeader>
+            </DialogHeader>
 
-
-          <div className="relative min-h-0 flex-1 overflow-auto bg-[#0f6e50]">
+          <div className="relative z-10 min-h-0 flex-1 overflow-auto">
             <div
               className="relative mx-auto h-full min-h-[780px] min-w-[1460px]"
               style={{ fontFamily: "Montserrat, sans-serif" }}
@@ -452,36 +454,30 @@ export function LeadsCardTableV2Dialog({
                 })}
               </div>
 
-              {showStats && totals.totalCommission > 0 && (
-                <div className="absolute left-1/2 top-[46%] -translate-x-1/2 text-[18px] font-bold leading-none text-emerald-100 [text-shadow:_0_2px_6px_rgba(0,0,0,0.85)]">
-                  Комиссия по всем этапам: {formatUsd(totals.totalCommission)}
-                </div>
-              )}
-
-              <div className="absolute left-1/2 top-[56%] h-[360px] w-[1000px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-2 border-amber-300/90 pointer-events-none">
-                <div className="absolute inset-[20px] rounded-[50%] border border-amber-200/85" />
+              <div className="absolute left-1/2 top-[56%] h-[360px] w-[1000px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-2 border-[rgba(243,209,139,0.44)] pointer-events-none shadow-[inset_0_0_0_1px_rgba(254,235,186,0.13),0_0_26px_rgba(232,192,122,0.08)]">
+                <div className="absolute inset-[20px] rounded-[50%] border border-[rgba(245,224,176,0.16)] border-dashed" />
               </div>
 
               <div className="absolute left-1/2 top-[56%] -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-10 w-full max-w-[400px]">
                 {!showStats ? (
                   <div
-                    className="w-full flex flex-col justify-center text-white [text-shadow:_0_2px_8px_rgba(0,0,0,0.75),_0_1px_2px_rgba(0,0,0,0.9)]"
+                    className="w-full flex flex-col justify-center text-[#fff4d7] [text-shadow:_0_2px_8px_rgba(0,0,0,0.75),_0_1px_2px_rgba(0,0,0,0.9)]"
                     style={{ fontFamily: 'Montserrat, sans-serif' }}
                   >
                     <div className="flex w-full items-center justify-between gap-3 mb-1.5">
-                      <p className="text-[12px] font-extrabold uppercase tracking-widest text-[#9fc1b2]">
+                      <p className="text-[12px] font-extrabold uppercase tracking-widest text-[rgba(243,225,188,0.85)]">
                         Расклад
                       </p>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setHistoryOpen(true)}
-                        className="h-6 px-3 text-[10px] font-bold tracking-wide rounded-full border border-emerald-300/40 bg-emerald-900/50 text-emerald-100 hover:bg-emerald-800 hover:text-white shadow-[0_4px_10px_rgba(0,0,0,0.3)]"
+                        className="h-6 px-3 text-[10px] font-bold tracking-wide rounded-full border border-[rgba(244,211,147,0.4)] bg-[rgba(68,43,18,0.78)] text-[#fcecc8] hover:bg-[rgba(88,57,25,0.88)] hover:text-[#fff4d7] shadow-[inset_0_1px_0_rgba(255,235,190,0.18)]"
                       >
                         История
                       </Button>
                     </div>
-                    <p className="mb-3 text-[10px] font-medium text-emerald-100/70 w-full text-left">
+                    <p className="mb-3 text-[10px] font-medium text-[rgba(239,224,192,0.88)] w-full text-left">
                       От: {createdLabel}
                     </p>
 
@@ -489,7 +485,7 @@ export function LeadsCardTableV2Dialog({
                       <p className="line-clamp-2 text-center text-[22px] font-black leading-tight text-white mb-0.5">
                         {activeLead?.name ?? "—"}
                       </p>
-                      <p className="line-clamp-1 text-center text-[13px] font-semibold text-[#8eccab]">
+                      <p className="line-clamp-1 text-center text-[13px] font-semibold text-[#e7fff2]">
                         {activeStage?.name ?? "Нет этапа"}
                       </p>
                     </div>
@@ -498,9 +494,9 @@ export function LeadsCardTableV2Dialog({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex flex-col items-center gap-1 cursor-help">
-                            <CheckCircle2 className={cn("size-6 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]", taskOk ? "text-emerald-400" : "text-rose-400")} />
-                            <span className="text-[9px] uppercase tracking-widest text-[#9fc1b2] mt-0.5">Задача</span>
-                            <span className={cn("text-[13px] font-black leading-none", taskOk ? "text-emerald-300" : "text-rose-300")}>
+                            <CheckCircle2 className={cn("size-6 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]", taskOk ? "text-[#9bf2ce]" : "text-rose-400")} />
+                            <span className="text-[9px] uppercase tracking-widest text-[rgba(243,225,188,0.85)] mt-0.5">Задача</span>
+                            <span className={cn("text-[13px] font-black leading-none", taskOk ? "text-[#c8f0d8]" : "text-rose-300")}>
                               {taskOk ? "Да" : "Нет"}
                             </span>
                           </div>
@@ -511,9 +507,9 @@ export function LeadsCardTableV2Dialog({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex flex-col items-center gap-1 cursor-help">
-                            <UserCheck className={cn("size-6 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]", managerOk ? "text-emerald-400" : "text-rose-400")} />
-                            <span className="text-[9px] uppercase tracking-widest text-[#9fc1b2] mt-0.5">Менеджер</span>
-                            <span className={cn("text-[13px] font-black leading-none", managerOk ? "text-emerald-300" : "text-rose-300")}>
+                            <UserCheck className={cn("size-6 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]", managerOk ? "text-[#9bf2ce]" : "text-rose-400")} />
+                            <span className="text-[9px] uppercase tracking-widest text-[rgba(243,225,188,0.85)] mt-0.5">Менеджер</span>
+                            <span className={cn("text-[13px] font-black leading-none", managerOk ? "text-[#c8f0d8]" : "text-rose-300")}>
                               {managerOk ? "Да" : "Нет"}
                             </span>
                           </div>
@@ -526,9 +522,9 @@ export function LeadsCardTableV2Dialog({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex flex-col items-center gap-1 cursor-help">
-                            <Clock className={cn("size-6 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]", overdue ? "text-rose-400" : "text-emerald-400")} />
-                            <span className="text-[9px] uppercase tracking-widest text-[#9fc1b2] mt-0.5">Проср.</span>
-                            <span className={cn("text-[13px] font-black leading-none", overdue ? "text-rose-300" : "text-emerald-300")}>
+                            <Clock className={cn("size-6 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]", overdue ? "text-rose-400" : "text-[#9bf2ce]")} />
+                            <span className="text-[9px] uppercase tracking-widest text-[rgba(243,225,188,0.85)] mt-0.5">Проср.</span>
+                            <span className={cn("text-[13px] font-black leading-none", overdue ? "text-rose-300" : "text-[#c8f0d8]")}>
                               {overdue ? "Да" : "Нет"}
                             </span>
                           </div>
@@ -537,24 +533,27 @@ export function LeadsCardTableV2Dialog({
                       </Tooltip>
                     </div>
 
-                    <div className="w-full flex items-center justify-between border-t border-emerald-400/20 pt-2.5">
+                    <div className="w-full flex items-center justify-between border-t border-[rgba(243,209,139,0.25)] pt-2.5">
                       <div className="text-left">
-                        <p className="text-[9px] font-semibold uppercase tracking-widest text-[#9fc1b2] mb-0.5">Прогресс</p>
-                        <p className="text-[13px] font-bold leading-none text-emerald-50">{activityLabel}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-widest text-[rgba(243,225,188,0.85)] mb-0.5">Прогресс</p>
+                        <p className="text-[13px] font-bold leading-none text-[#fff0cb]">{activityLabel}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[9px] font-semibold uppercase tracking-widest text-[#9fc1b2] mb-0.5">Комиссия</p>
-                        <p className="text-[16px] font-bold leading-none text-amber-300">{formatUsd(activeLeadCommission)}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-widest text-[rgba(243,225,188,0.85)] mb-0.5">Комиссия</p>
+                        <p className="text-[16px] font-bold leading-none text-[#ffe4a8]">{formatUsd(activeLeadCommission)}</p>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div
-                    className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-[12px] border border-emerald-300/20 bg-[#0c5a42]/90 px-6 py-4 text-white shadow-[0_15px_30px_rgba(0,0,0,0.4)] backdrop-blur-md"
+                    className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-[12px] border border-[rgba(242,210,146,0.35)] bg-[rgba(18,45,36,0.96)] px-6 py-4 text-[#f2e4c1] shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
                     style={{ fontFamily: "Montserrat, sans-serif" }}
                   >
+                    <p className="col-span-2 mb-1 text-center text-[10px] font-bold uppercase tracking-widest text-[rgba(249,230,190,0.95)]">
+                      Количество по всем этапам
+                    </p>
                     <div className="text-center">
-                      <p className="mb-0.5 text-[11px] uppercase tracking-widest text-emerald-200/80">Всего лидов</p>
+                      <p className="mb-0.5 text-[11px] uppercase tracking-widest text-[rgba(249,230,190,0.9)]">Всего лидов</p>
                       <p className="text-[24px] font-black leading-none text-white">{totals.total}</p>
                     </div>
                     <div className="text-center">
@@ -562,18 +561,18 @@ export function LeadsCardTableV2Dialog({
                       <p className="text-[24px] font-black leading-none text-rose-200">{totals.critical}</p>
                     </div>
                     <div className="text-center">
-                      <p className="mb-0.5 text-[11px] uppercase tracking-widest text-amber-200/80">Доля проблемных</p>
-                      <p className="text-[24px] font-black leading-none text-amber-200">
+                      <p className="mb-0.5 text-[11px] uppercase tracking-widest text-[rgba(249,230,190,0.9)]">Доля проблемных</p>
+                      <p className="text-[24px] font-black leading-none text-[#ffeab4]">
                         {totals.total > 0 ? Math.round((totals.critical / totals.total) * 100) : 0}%
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="mb-0.5 text-[11px] uppercase tracking-widest text-emerald-200/80">Комиссия</p>
-                      <p className="text-[24px] font-black leading-none text-emerald-100">
+                      <p className="mb-0.5 text-[11px] uppercase tracking-widest text-[rgba(249,230,190,0.9)]">Комиссия</p>
+                      <p className="text-[24px] font-black leading-none text-[#c8f0d8]">
                         {formatUsd(totals.totalCommission)}
                       </p>
                     </div>
-                    <div className="col-span-2 pt-1 text-center border-t border-emerald-400/20 mt-1">
+                    <div className="col-span-2 pt-1 text-center border-t border-[rgba(243,209,139,0.25)] mt-1">
                       <p className="mb-0.5 text-[11px] uppercase tracking-widest text-rose-200/80">Комиссия по проблемным</p>
                       <p className="text-[20px] font-black leading-none text-rose-200">
                         {formatUsd(totals.criticalCommission)}
@@ -636,21 +635,19 @@ export function LeadsCardTableV2Dialog({
               </div>
 
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-                <div className="flex h-[66px] min-w-[208px] items-center gap-2 rounded-[10px] border border-emerald-200/80 bg-emerald-50/95 px-3 text-emerald-950 shadow-[0_8px_16px_rgba(0,0,0,0.2)]">
-                  <Avatar className="size-9 border border-emerald-300">
-                    <AvatarFallback className="bg-emerald-700 text-xs font-semibold text-white">
-                      {managerInitials(dealerName || "MN")}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="v2-dealer-block flex h-[66px] min-w-[208px] items-center gap-2 px-3 py-2">
+                  <span className="v2-dealer-avatar">
+                    {managerInitials(dealerName || "MN")}
+                  </span>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Менеджер</p>
-                    <p className="truncate text-[16px] font-semibold leading-tight text-emerald-950">{dealerName}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[rgba(247,229,189,0.82)]">Менеджер</p>
+                    <p className="truncate text-[16px] font-semibold leading-tight text-[#ffefca]">{dealerName}</p>
                   </div>
                 </div>
               </div>
 
-
             </div>
+          </div>
           </div>
         </DialogContent>
       </Dialog >
@@ -714,13 +711,6 @@ function StageDeckPile({
   const pileHeight = hiddenLayers * 3 + 4 + cardHeight + 8
 
   const columnId = LEAD_STAGE_COLUMN[stageId] ?? "in_progress"
-  const arrowColorClasses =
-    columnId === "rejection"
-      ? "border-sky-300 bg-sky-600"
-      : columnId === "success"
-        ? "border-amber-300 bg-amber-500"
-        : "border-emerald-300 bg-emerald-600"
-
   const [showLocalStats, setShowLocalStats] = useState(false)
 
   return (
@@ -730,7 +720,7 @@ function StageDeckPile({
           <div className="mb-1 flex justify-center">
             <button
               onClick={() => setShowLocalStats((v) => !v)}
-              className="text-white/60 hover:text-white transition-colors focus:outline-none"
+              className="text-[rgba(247,232,198,0.6)] hover:text-[#f7ecd4] transition-colors focus:outline-none"
               title="Показать статистику по этапу"
             >
               <Eye className="size-4" />
@@ -744,42 +734,36 @@ function StageDeckPile({
               <button
                 type="button"
                 onClick={() => onStep(stageId, leads, -1)}
-                className={cn(
-                  "h-5 min-w-[32px] rounded border px-1 text-[11px] font-bold text-white",
-                  arrowColorClasses
-                )}
+                className="v2-stage-nav-btn h-5 min-w-[32px] px-1 text-[11px]"
               >
-                ◂♦
+                &#8249;&#8249;
               </button>
               <button
                 type="button"
                 onClick={() => onStep(stageId, leads, 1)}
-                className={cn(
-                  "h-5 min-w-[32px] rounded border px-1 text-[11px] font-bold text-white",
-                  arrowColorClasses
-                )}
+                className="v2-stage-nav-btn h-5 min-w-[32px] px-1 text-[11px]"
               >
-                ♦▸
+                &#8250;&#8250;
               </button>
             </>
           ) : (
             <>
-              <span className="h-5 min-w-[32px] opacity-0">◂♦</span>
-              <span className="h-5 min-w-[32px] opacity-0">♦▸</span>
+              <span className="h-5 min-w-[32px] opacity-0">&#8249;&#8249;</span>
+              <span className="h-5 min-w-[32px] opacity-0">&#8250;&#8250;</span>
             </>
           )}
         </div>
 
         <div className={cn("mb-2 flex items-center justify-center", compact ? "h-8" : "h-5")}>
-          <p className={cn("text-center font-bold tracking-wide text-white", compact ? "line-clamp-2 text-[11px]" : "text-[11px] uppercase")}>
+          <p className={cn("text-center font-bold tracking-wide text-[#f2dfb6]", compact ? "line-clamp-2 text-[11px]" : "text-[11px] uppercase")}>
             {stageLabel}
           </p>
         </div>
 
         {!compact && (showStats || showLocalStats) && (
           <div className="mb-1 flex flex-col items-center gap-0.5 [text-shadow:_0_1px_3px_rgba(0,0,0,0.7)]">
-            <div className="flex items-center gap-2 text-[11px] font-semibold leading-none text-white">
-              <span className="text-white">Всего: {totalLeads}</span>
+            <div className="flex items-center gap-2 text-[11px] font-semibold leading-none text-[#f7ecd4]">
+              <span>Всего: {totalLeads}</span>
               <span className="text-rose-300">Пробл: {criticalLeads}</span>
             </div>
             <span className={cn(
@@ -787,8 +771,8 @@ function StageDeckPile({
               criticalLeads / Math.max(totalLeads, 1) > 0.5
                 ? "bg-rose-600 text-white"
                 : criticalLeads / Math.max(totalLeads, 1) > 0.25
-                  ? "bg-amber-500 text-white"
-                  : "bg-emerald-600 text-white"
+                  ? "bg-[rgba(88,57,25,0.88)] text-[#fcecc8] border border-[rgba(244,214,150,0.55)]"
+                  : "bg-[rgba(24,106,78,0.84)] text-[#e7ffef] border border-[rgba(150,255,217,0.62)]"
             )}>
               {totalLeads > 0 ? Math.round((criticalLeads / totalLeads) * 100) : 0}% пробл.
             </span>
@@ -797,7 +781,7 @@ function StageDeckPile({
 
         {stageName && (
           <div className="flex h-8 items-start justify-center">
-            <p className="line-clamp-2 text-center text-[11px] font-semibold leading-tight text-white">
+            <p className="line-clamp-2 text-center text-[11px] font-semibold leading-tight text-[#f2dfb6]">
               {stageName}
             </p>
           </div>
@@ -812,10 +796,9 @@ function StageDeckPile({
               key={`back-${stageId}-${layerIndex}`}
               aria-hidden
               className={cn(
-                "absolute rounded-[7px] border shadow-[0_3px_8px_rgba(0,0,0,0.25)]",
-                deckTone === "critical"
-                  ? "border-rose-300/90 bg-[repeating-linear-gradient(145deg,rgba(127,29,29,0.55)_0px,rgba(127,29,29,0.55)_4px,rgba(255,241,242,0.95)_4px,rgba(255,241,242,0.95)_9px)]"
-                  : "border-slate-300/90 bg-[repeating-linear-gradient(145deg,rgba(15,23,42,0.34)_0px,rgba(15,23,42,0.34)_4px,rgba(248,250,252,0.95)_4px,rgba(248,250,252,0.95)_9px)]"
+                "absolute rounded-[14px] shadow-[0_3px_8px_rgba(0,0,0,0.25)]",
+                "v2-card-back",
+                deckTone === "critical" && "border-rose-300/90"
               )}
               style={{
                 width: cardWidth,
@@ -839,9 +822,9 @@ function StageDeckPile({
                 type="button"
                 onClick={() => onSelect(lead.id)}
                 className={cn(
-                  "absolute overflow-hidden rounded-[7px] border px-1.5 py-1.5 text-center shadow-[0_4px_10px_rgba(0,0,0,0.26)]",
-                  isCritical ? "border-rose-300 bg-[#FDF2F2]" : "border-slate-300 bg-white",
-                  activeLeadId === lead.id && "ring-2 ring-slate-300"
+                  "absolute overflow-hidden rounded-[14px] px-1.5 py-1.5 text-center shadow-[0_4px_10px_rgba(0,0,0,0.26)] v2-card-face",
+                  isCritical && "is-critical",
+                  activeLeadId === lead.id && "ring-2 ring-[rgba(243,209,139,0.6)]"
                 )}
                 style={{
                   width: cardWidth,
@@ -859,7 +842,7 @@ function StageDeckPile({
                 {isCritical && (
                   <span
                     aria-hidden
-                    className="pointer-events-none absolute inset-0 rounded-[7px]"
+                    className="pointer-events-none absolute inset-0 rounded-[14px]"
                     style={{
                       background: "repeating-linear-gradient(145deg,rgba(251,113,133,0.09) 0px,rgba(251,113,133,0.09) 3px,transparent 3px,transparent 16px)",
                       zIndex: 0,
@@ -867,20 +850,20 @@ function StageDeckPile({
                   />
                 )}
                 {!isFrontCard && (
-                  <span className="relative z-10 absolute left-1 right-1 top-1 rounded-[4px] border border-slate-200/80 bg-white/95 px-1 py-0.5 text-[10px] font-medium leading-none text-slate-900">
+                  <span className="relative z-10 absolute left-1 right-1 top-1 rounded-[4px] border border-[rgba(217,201,171,0.5)] bg-[#f8f4ec]/95 px-1 py-0.5 text-[10px] font-medium leading-none text-[#2a2318]">
                     <span className="block truncate">{lead.name ?? lead.id}</span>
                   </span>
                 )}
                 <p
                   className={cn(
-                    "relative z-10 mt-4 text-[13px] font-medium leading-tight text-slate-900",
+                    "relative z-10 mt-4 text-[13px] font-medium leading-tight text-[#2a2318]",
                     isFrontCard ? "line-clamp-3 whitespace-normal break-words" : "line-clamp-2"
                   )}
                 >
                   {lead.name ?? lead.id}
                 </p>
                 {columnId === "in_progress" && lead.commissionUsd != null && (
-                  <p className="relative z-10 mt-1 text-[10px] font-medium text-emerald-700">
+                  <p className="relative z-10 mt-1 text-[10px] font-medium text-[#6b5e4e]">
                     {formatUsd(lead.commissionUsd)}
                   </p>
                 )}
@@ -891,14 +874,14 @@ function StageDeckPile({
 
         {leads.length === 0 && (
           <span
-            className="absolute rounded-[7px] border border-dashed border-white/35 bg-white/10"
+            className="v2-card-back absolute rounded-[14px] border border-dashed border-[rgba(238,209,152,0.4)] opacity-60"
             style={{ width: cardWidth, height: cardHeight, top: 0, left: 0 }}
           />
         )}
       </div>
 
       {!compact && (showStats || showLocalStats) && columnCommission > 0 && (
-        <div className="mt-0.5 text-center text-[13px] font-bold leading-none text-emerald-200 [text-shadow:_0_1px_3px_rgba(0,0,0,0.75)]">
+        <div className="mt-0.5 text-center text-[13px] font-bold leading-none text-[#fcecc8] [text-shadow:_0_1px_3px_rgba(0,0,0,0.75)]">
           {formatUsd(columnCommission)}
         </div>
       )}
