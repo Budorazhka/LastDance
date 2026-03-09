@@ -712,6 +712,7 @@ function StageDeckPile({
 
   const columnId = LEAD_STAGE_COLUMN[stageId] ?? "in_progress"
   const [showLocalStats, setShowLocalStats] = useState(false)
+  const hasCompactStageLabel = stageId === "callback" || stageId === "country_discussed"
 
   return (
     <>
@@ -755,14 +756,25 @@ function StageDeckPile({
         </div>
 
         <div className={cn("mb-2 flex items-center justify-center", compact ? "h-8" : "h-5")}>
-          <p className={cn("text-center font-bold tracking-wide text-[#f2dfb6]", compact ? "line-clamp-2 text-[11px]" : "text-[11px] uppercase")}>
+          <p
+            className={cn(
+              "text-center font-bold text-[#f2dfb6]",
+              compact
+                ? hasCompactStageLabel
+                  ? "line-clamp-2 text-[10px] leading-tight tracking-[0.01em]"
+                  : "line-clamp-2 text-[11px] tracking-wide"
+                : hasCompactStageLabel
+                  ? "text-[10px] uppercase leading-tight tracking-[0.04em]"
+                  : "text-[11px] uppercase tracking-wide"
+            )}
+          >
             {stageLabel}
           </p>
         </div>
 
         {!compact && (showStats || showLocalStats) && (
           <div className="mb-1 flex flex-col items-center gap-0.5 [text-shadow:_0_1px_3px_rgba(0,0,0,0.7)]">
-            <div className="flex items-center gap-2 text-[11px] font-semibold leading-none text-[#f7ecd4]">
+            <div className="flex items-center gap-3.5 text-[11px] font-semibold leading-none text-[#f7ecd4]">
               <span>Всего: {totalLeads}</span>
               <span className="text-rose-300">Пробл: {criticalLeads}</span>
             </div>
@@ -852,13 +864,13 @@ function StageDeckPile({
                   />
                 )}
                 {!isFrontCard && (
-                  <span className="relative z-10 absolute left-1 right-1 top-1 rounded-[4px] border border-[rgba(217,201,171,0.5)] bg-[#f8f4ec]/95 px-1 py-0.5 text-[10px] font-medium leading-none text-[#2a2318]">
+                  <span className="relative z-10 absolute left-1 right-1 top-1 rounded-[4px] border border-[rgba(217,201,171,0.5)] bg-[#f8f4ec]/95 px-1 py-0.5 text-[10px] font-medium leading-none text-black">
                     <span className="block truncate">{lead.name ?? lead.id}</span>
                   </span>
                 )}
                 <p
                   className={cn(
-                    "relative z-10 font-medium leading-tight text-[#2a2318]",
+                    "relative z-10 font-medium leading-tight text-black",
                     compact ? "mt-2 text-[11px]" : "mt-4 text-[13px]",
                     isFrontCard ? "line-clamp-3 whitespace-normal break-words" : "line-clamp-2"
                   )}
@@ -866,7 +878,7 @@ function StageDeckPile({
                   {lead.name ?? lead.id}
                 </p>
                 {columnId === "in_progress" && lead.commissionUsd != null && (
-                  <p className={cn("relative z-10 font-medium text-[#6b5e4e]", compact ? "mt-0.5 text-[9px]" : "mt-1 text-[10px]")}>
+                  <p className={cn("relative z-10 font-medium text-black", compact ? "mt-0.5 text-[9px]" : "mt-1 text-[10px]")}>
                     {formatUsd(lead.commissionUsd)}
                   </p>
                 )}

@@ -21,9 +21,9 @@ export const LEAD_STAGES: LeadStage[] = [
   { id: 'no_answer_1', name: 'Недозвонился 1',      order: 5 },
   // --- in_progress ---
   { id: 'new',              name: 'Новый лид',                    order: 6 },
-  { id: 'callback',         name: 'Попросил связаться позже',     order: 7 },
+  { id: 'callback',         name: 'Связаться позже',              order: 7 },
   { id: 'presented',        name: 'Презентовали компанию',        order: 8 },
-  { id: 'country_discussed', name: 'Обсудили ситуацию в стране', order: 9 },
+  { id: 'country_discussed', name: 'Ситуация в стране',          order: 9 },
   { id: 'need_identified',  name: 'Выявлена потребность',         order: 10 },
   { id: 'need_adjusted',    name: 'Потребность скорректирована',  order: 11 },
   { id: 'kp_sent',          name: 'Отправлено КП',                order: 12 },
